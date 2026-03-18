@@ -105,7 +105,10 @@ class BotManager:
             self.db.add_active_viewer(channel_id, author)
 
             # COMMANDS
-            if content.lower().startswith("!boop"):
+            if content.lower().startswith("!help"):
+                await self.send_chat(ws, channel_id, "✨ Commands: !boop @user | !pet @user | !avatar 🎭 (subs) | !paint #hex (subs)")
+
+            elif content.lower().startswith("!boop"):
                 parts = content.split(" ")
                 if len(parts) > 1:
                     target = parts[1].replace("@", "")
