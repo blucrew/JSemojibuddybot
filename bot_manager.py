@@ -21,6 +21,14 @@ class BotManager:
         self.db = DBManager(db_path=db_path)
         self.running = True
 
+    async def send_chat(self, ws, channel_id, text):
+        payload = {
+            "command": "message",
+            "identifier": json.dumps({"channel": "GatewayChannel", "id": str(channel_id)}),
+            "data": json.dumps({"action": "send_message", "text": text})
+        }
+        await ws.send(json.dumps(payload))
+
     def get_basic_auth_token(self):
         creds = f"{BOT_ID}:{BOT_SECRET}"
         return base64.b64encode(creds.encode()).decode()
@@ -75,13 +83,13 @@ class BotManager:
                         continue
 
                     # 4. Process the event
-                    await self.process_event(channel_id, message)
+                    await self.process_event(ws, channel_id, message)
 
         except Exception as e:
             print(f"⚠️ Connection lost: {e}")
             await asyncio.sleep(5)
 
-    async def process_event(self, channel_id, message):
+    async def process_event(self, ws, channel_id, message):
         event_name = message.get("event")
         event_type = message.get("type")
 
@@ -112,6 +120,7 @@ class BotManager:
                     color = parts[1]
                     print(f"🎨 PAINT DETECTED! {author} -> {color}")
                     self.db.update_viewer(channel_id, author, color=color)
+                    await self.send_chat(ws, channel_id, f"@{author} your buddy has been repainted! 🎨")
 
             elif content.lower().startswith("!avatar") and is_sub:
                 parts = content.split(" ")
@@ -119,6 +128,7 @@ class BotManager:
                     emoji = parts[1]
                     print(f"🎭 AVATAR DETECTED! {author} -> {emoji}")
                     self.db.update_viewer(channel_id, author, emoji=emoji)
+                    await self.send_chat(ws, channel_id, f"@{author} your avatar has been updated! {emoji}")
             else:
                 self.db.update_viewer(channel_id, author, is_subscriber=is_sub)
 
