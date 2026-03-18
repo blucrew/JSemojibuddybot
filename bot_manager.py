@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 import ssl
 import websockets
 import os
@@ -133,9 +134,12 @@ class BotManager:
                 parts = content.split(" ")
                 if len(parts) > 1:
                     color = parts[1]
-                    print(f"🎨 PAINT DETECTED! {author} -> {color}")
-                    self.db.update_viewer(channel_id, author, color=color)
-                    await self.send_chat(ws, channel_id, f"@{author} your buddy has been repainted! 🎨")
+                    if re.fullmatch(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})", color):
+                        print(f"🎨 PAINT DETECTED! {author} -> {color}")
+                        self.db.update_viewer(channel_id, author, color=color)
+                        await self.send_chat(ws, channel_id, f"@{author} your buddy has been repainted! 🎨")
+                    else:
+                        await self.send_chat(ws, channel_id, f"@{author} please use a valid hex color, e.g. !paint #ff6600")
 
             elif content.lower().startswith("!avatar") and is_sub:
                 parts = content.split(" ")
