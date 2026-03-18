@@ -105,7 +105,19 @@ class BotManager:
             self.db.add_active_viewer(channel_id, author)
 
             # COMMANDS
-            if content.lower().startswith("!pet"):
+            if content.lower().startswith("!boop"):
+                parts = content.split(" ")
+                if len(parts) > 1:
+                    target = parts[1].replace("@", "")
+                    viewer = self.db.get_viewers(channel_id)
+                    target_data = next((v for v in viewer if v["username"].lower() == target.lower()), None)
+                    streamer = self.db.get_streamer(channel_id)
+                    default_emoji = streamer.get("default_emoji", "🙂") if streamer else "🙂"
+                    target_emoji = target_data["emoji"] if target_data and target_data.get("emoji") else default_emoji
+                    print(f"👉 BOOP! {author} -> {target}")
+                    await self.send_chat(ws, channel_id, f"@{author} boops @{target}! {target_emoji} ✨")
+
+            elif content.lower().startswith("!pet"):
                 target = author 
                 parts = content.split(" ")
                 if len(parts) > 1:
