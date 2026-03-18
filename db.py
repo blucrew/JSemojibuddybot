@@ -207,7 +207,7 @@ class DBManager:
         c.execute("INSERT INTO events (channel_id, type, data, timestamp) VALUES (?, ?, ?, ?)",
                   (channel_id, type, data, time.time()))
         # Cleanup old events
-        c.execute("DELETE FROM events WHERE timestamp < ?", (time.time() - 10,))
+        c.execute("DELETE FROM events WHERE timestamp < ?", (time.time() - 30,))
         conn.commit()
         conn.close()
 

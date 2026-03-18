@@ -5,11 +5,10 @@ import ssl
 import websockets
 import os
 import base64
+from dotenv import load_dotenv
 from db import DBManager
 
 # --- CONFIG ---
-import os
-from dotenv import load_dotenv
 load_dotenv()
 BOT_ID = os.getenv("JOYSTICK_BOT_ID")
 BOT_SECRET = os.getenv("JOYSTICK_BOT_SECRET")
@@ -145,6 +144,9 @@ class BotManager:
                 print(f"❤️ PET DETECTED! From {author} -> {target}")
                 self.db.log_event(channel_id, "pet", json.dumps({"source": author, "target": target}))
 
+            elif content.lower().startswith("!paint") and not is_sub:
+                await self.send_chat(ws, channel_id, f"@{author} !paint is for subscribers only. 🎨")
+
             elif content.lower().startswith("!paint") and is_sub:
                 parts = content.split(" ")
                 if len(parts) > 1:
@@ -155,6 +157,9 @@ class BotManager:
                         await self.send_chat(ws, channel_id, f"@{author} your buddy has been repainted! 🎨")
                     else:
                         await self.send_chat(ws, channel_id, f"@{author} please use a valid hex color, e.g. !paint #ff6600")
+
+            elif content.lower().startswith("!avatar") and not is_sub:
+                await self.send_chat(ws, channel_id, f"@{author} !avatar is for subscribers only. 🎭")
 
             elif content.lower().startswith("!avatar") and is_sub:
                 parts = content.split(" ")
