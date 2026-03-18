@@ -131,6 +131,27 @@ class DBManager:
         conn.commit()
         conn.close()
 
+    def clear_all_active_viewers(self):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("DELETE FROM active_viewers")
+        conn.commit()
+        conn.close()
+
+    def remove_timed_out_viewers(self, channel_id, timeout_minutes):
+        cutoff = time.time() - (timeout_minutes * 60)
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute('''DELETE FROM active_viewers
+                     WHERE channel_id=? AND username IN (
+                         SELECT username FROM viewers
+                         WHERE channel_id=? AND last_seen < ?
+                     )''', (channel_id, channel_id, cutoff))
+        removed = c.rowcount
+        conn.commit()
+        conn.close()
+        return removed
+
     def get_active_viewers(self, channel_id):
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row

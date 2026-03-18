@@ -34,8 +34,23 @@ class BotManager:
         creds = f"{BOT_ID}:{BOT_SECRET}"
         return base64.b64encode(creds.encode()).decode()
 
+    async def timeout_loop(self):
+        while self.running:
+            await asyncio.sleep(60)
+            streamers = self.db.get_all_streamers()
+            for streamer in streamers:
+                channel_id = streamer["channel_id"]
+                full = self.db.get_streamer(channel_id)
+                timeout_minutes = int(full.get("viewer_timeout_minutes", 45))
+                removed = self.db.remove_timed_out_viewers(channel_id, timeout_minutes)
+                if removed:
+                    print(f"⏱️ Timed out {removed} viewer(s) from [{channel_id}]")
+
     async def start(self):
         print("🤖 Bot Manager Started - GLOBAL GATEWAY MODE")
+        self.db.clear_all_active_viewers()
+        print("🧹 Cleared stale active viewers from previous session.")
+        asyncio.create_task(self.timeout_loop())
         while self.running:
             try:
                 await self.connect_to_gateway()
