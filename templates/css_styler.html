@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joystick.TV CSS Styler</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=Orbitron:wght@400;900&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+New&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg: #121212; 
+            --panel: #1e1e1e; 
+            --accent: #00d2ff; 
+            --text: #e0e0e0; 
+            --error: #ff4d4d;
+        }
+        /* Global Box Sizing & Custom Scrollbar */
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #121212; }
+        ::-webkit-scrollbar-thumb { background: #0affff; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0affff; }
+
+        body { 
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            overflow: hidden; 
+        }
+        .sidebar { 
+            width: 340px; 
+            background: var(--panel); 
+            border-right: 1px solid #333; 
+            padding: 0; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 5px 0 20px rgba(0,0,0,0.5); 
+            z-index: 2;
+        }
+        .sidebar-scroll {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .sidebar-footer {
+            padding: 20px;
+            background: var(--panel);
+            border-top: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        h1 { 
+            margin: 0 0 5px 0; 
+            color: var(--accent); 
+            font-size: 1.1rem; 
+            text-transform: uppercase; 
+            border-bottom: 1px solid #333; 
+            padding-bottom: 10px; 
+        }
+        .group { 
+            background: rgba(255,255,255,0.03); 
+            padding: 12px; 
+            border-radius: 8px; 
+            border: 1px solid #333; 
+        }
+        .hidden { 
+            display: none; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+            font-size: 0.85rem; 
+            color: #aaa; 
+        }
+        select { 
+            width: 100%; 
+            padding: 8px; 
+            background: #121212; 
+            border: 1px solid #444; 
+            color: white; 
+            border-radius: 4px; 
+            outline: none; 
+            font-size: 0.9rem; 
+        }
+        select:focus { 
+            border-color: var(--accent); 
+        }
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #121212;
+            cursor: pointer;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background: #121212;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+            outline: none;
+            font-size: 0.9rem;
+        }
+        
+        /* Shape Selection Grid */
+        .shape-grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 10px; 
+            margin-top: 5px; 
+        }
+        .shape-btn { 
+            background: #000; 
+            border: 1px solid #444; 
+            height: 40px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            transition: 0.2s; 
+        }
+        .shape-btn:hover { 
+            background: rgba(0,210,255,0.1); 
+        }
+        .shape-btn.active { 
+            border-color: var(--accent); 
+            background: rgba(0,210,255,0.2); 
+        }
+        .v-circle { 
+            width: 12px; 
+            height: 12px; 
+            border-radius: 50%; 
+            background: #fff; 
+        }
+        .v-square { 
+            width: 12px; 
+            height: 12px; 
+            background: #fff; 
+        }
+        .v-diamond { 
+            width: 12px; 
+            height: 12px; 
+            background: #fff; 
+            transform: rotate(45deg); 
+        }
+        .v-heart { 
+            position: relative; 
+            width: 14px; 
+            height: 12px; /* Adjusted height for better heart shape */
+        }
+        .v-heart::before, .v-heart::after { 
+            content: ""; 
+            position: absolute; 
+            width: 8px; /* Adjusted width */
+            height: 12px; /* Adjusted height */
+            background: #fff; 
+            border-radius: 10px 10px 0 0; 
+        }
+        .v-heart::before { 
+            transform: rotate(-45deg); 
+            left: 3px; 
+        } 
+        .v-heart::after { 
+            transform: rotate(45deg); 
+            left: -1px; 
+        }
+
+        .btn-copy { 
+            background: var(--accent); 
+            color: #000; 
+            border: none; 
+            padding: 12px; 
+            width: 100%; 
+            font-weight: bold; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            margin-top: 0; 
+            transition: background 0.3s; 
+        }
+        .btn-copy:hover { 
+            background: #00aaff; 
+        }
+        .btn-reset { 
+            background: #444; 
+            color: #fff; 
+            border: none; 
+            padding: 12px; 
+            width: 100%; 
+            font-weight: bold; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            margin-top: 5px; 
+        }
+        .btn-reset:hover { 
+            background: #555; 
+        }
+        textarea { 
+            width: 100%; 
+            height: 150px; 
+            background: #000; 
+            border: 1px solid #333; 
+            color: #0f0; 
+            font-family: monospace; 
+            padding: 10px; 
+            font-size: 10px; 
+            margin-top: 0; 
+            resize: vertical; 
+        }
+        
+        /* PREVIEW AREA */
+        .preview-container { 
+            flex: 1; 
+            position: relative; 
+            background: #000; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+        }
+        #preview-stage { 
+            width: 90%; 
+            max-width: 700px; 
+            min-height: 400px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-end; 
+            padding: 20px; 
+            font-family: inherit; /* Ensure font inheritance */
+        }
+        @keyframes rf { 
+            0% {background-position: 0% 50%;} 
+            100% {background-position: 100% 50%;} 
+        }
+        @keyframes tk { 
+            0% { transform: translateX(100%); } 
+            100% { transform: translateX(-100%); } 
+        }
+        @keyframes fadeOut { 
+            0% { opacity: 1; } 
+            100% { opacity: 0; } 
+        }
+        @keyframes pulse-glow {
+            0% {
+                text-shadow: 0 0 5px var(--preview-glow, var(--accent)), 0 0 10px var(--preview-glow, var(--accent)), 0 0 15px var(--preview-glow, var(--accent));
+                transform: scale(1);
+            }
+            100% {
+                text-shadow: 0 0 10px var(--preview-glow, var(--accent)), 0 0 20px var(--preview-glow, var(--accent)), 0 0 30px var(--preview-glow, var(--accent));
+                transform: scale(1.05);
+            }
+        }
+        
+        /* Bubble Styles for Preview */
+        .p-bubble { 
+            padding: 10px 15px; 
+            margin-bottom: 8px; 
+            border-radius: 12px; 
+            background: rgba(25,25,25,0.9); 
+            border: 2px solid #fff; 
+            width: fit-content; 
+            max-width: 85%; 
+            animation: fadeIn 0.5s ease; 
+            transition: opacity 0.5s ease; 
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .p-uname { 
+            font-weight: 900; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            margin-right: 6px; 
+        }
+        .p-message { 
+            color: #fff; 
+        }
+
+        /* --- ADVANCED BUBBLE REFINEMENTS --- */
+        /* Plasma Border Animation */
+        @keyframes plasmaRotate {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Neon Pulse Animation */
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 5px var(--glow), inset 0 0 5px var(--glow); border-color: var(--glow); }
+            50% { box-shadow: 0 0 20px var(--glow), inset 0 0 10px var(--glow); border-color: #fff; }
+        }
+
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Stepper Control */
+        .stepper { display: flex; align-items: center; background: #121212; border: 1px solid #444; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .step-btn { background: #222; color: #fff; border: none; width: 40px; height: 35px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .step-btn:hover { background: #333; }
+        .step-btn:active { background: var(--accent); color: #000; }
+        .step-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #timeoutDisplay { border: none; text-align: center; background: transparent; font-family: 'Inter', sans-serif; font-weight: bold; pointer-events: none; width: 100%; color: #fff; }
+
+        /* Base Bubble Style Logic */
+        .chat-message {
+            position: relative;
+            background: rgba(10,10,10,0.95) !important;
+            padding: 12px 18px !important;
+            margin-bottom: 10px !important;
+            transition: all 0.3s ease;
+        }
+
+        /* The Cyber Cut - Professional geometric corners */
+        .style-cyber {
+            clip-path: polygon(0% 0%, 95% 0%, 100% 25%, 100% 100%, 8% 100%, 0% 80%);
+            border-left: 4px solid var(--glow) !important;
+        }
+
+        /* The Plasma Edge - Dual-background trick */
+        .style-plasma {
+            border: 2px solid transparent !important;
+            background-image: linear-gradient(rgba(10,10,10,0.95), rgba(10,10,10,0.95)),                        linear-gradient(90deg, #ff00ff, var(--glow), #ff00ff) !important;
+            background-origin: border-box !important;
+            background-clip: padding-box, border-box !important;
+            background-size: 200% 100% !important;
+            animation: plasmaRotate 3s linear infinite !important;
+            border-radius: 12px !important;
+        }
+
+        /* Goal Preview */
+        .p-goal-trk { 
+            background: rgba(0,0,0,0.7); 
+            border: 2px solid #555; 
+            height: 32px; 
+            border-radius: 16px; 
+            position: relative; 
+            overflow: hidden; 
+        }
+        .p-goal-fill { 
+            height: 100%; 
+            width: 50%; 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+        }
+        .p-marker { 
+            position: absolute; 
+            left: 50%; 
+            top: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 14px; 
+            height: 14px; 
+            background: #fff; 
+        }
+        .error-msg { 
+            color: var(--error); 
+            font-size: 0.85rem; 
+            margin-top: 5px; 
+            display: none; 
+        }
+        .instructions {
+            font-size: 0.8rem;
+            color: #ccc;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            background: rgba(0, 210, 255, 0.05);
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid var(--accent);
+        }
+        .instructions a { color: var(--accent); text-decoration: none; }
+        .instructions a:hover { text-decoration: underline; }
+
+        .back-link {
+            display: block;
+            margin-top: 0;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.8rem;
+            text-align: center;
+            transition: color 0.2s;
+        }
+        .back-link:hover {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-scroll">
+    <h1>joysticktv overlay CSS Styler</h1>
+    <div class="instructions">
+        <strong>How to use:</strong><br>
+        1. Select a "Vanilla" scene in <a href="https://joystick.tv/scenes" target="_blank">Joystick.TV Scenes</a>, and add it to your OBS as a Browser Source according to JSTV's instructions.<br>
+        2. Use this tool to design your look.<br>
+        3. Copy the CSS below.<br>
+        4. In OBS, right-click the Browser Source → Properties → Paste into "Custom CSS".<br>
+	5. Click the "Refresh cache of current page" button at the bottom of this Properties window. → OK. 
+    </div>
+    <div class="group">
+        <label>Overlay Type</label>
+        <select id="mainSelect">
+            <option value="chat" selected>Chat Overlay</option>
+            <option value="alert">Alert Overlay</option>
+            <option value="goal_tip">Tip Goal Overlay</option>
+            <option value="goal_ms">Milestone Overlay</option>
+            <option value="list_ev">Event List Overlay</option>
+            <option value="label_lt">Largest Tipper Overlay</option>
+            <option value="list_tk">Tip Ticker Overlay</option>
+            <option value="label_ct">Chat Timers Overlay</option>
+            <option value="label_lf">Latest Followers Overlay</option>
+            <option value="label_tp">Latest Tipper Overlay</option>
+            <option value="label_ls">Latest Subscriber Overlay</option>
+        </select>
+    </div>
+    <div class="group">
+        <label>Color Theme</label>
+        <select id="colorSelect">
+            <optgroup label="Neon Solids">
+                <option value="n-blue">Neon Blue</option>
+                <option value="n-pink">Neon Pink</option>
+                <option value="n-green">Neon Green</option>
+                <option value="n-purple">Neon Purple</option>
+                <option value="n-yellow">Neon Yellow</option>
+                <option value="n-orange">Neon Orange</option>
+                <option value="n-red">Neon Red</option>
+                <option value="n-cyan">Neon Cyan</option>
+            </optgroup>
+            <optgroup label="Pride (Soft Animated)">
+                <option value="f-rainbow-soft" selected>Rainbow</option>
+                <option value="f-gay-soft">Gay Men (Vincian)</option>
+                <option value="f-lesbian-soft">Lesbian</option>
+                <option value="f-trans-soft">Transgender</option>
+                <option value="f-asexual-soft">Asexual</option>
+                <option value="f-nonbinary-soft">Nonbinary</option>
+            </optgroup>
+            <optgroup label="Pride (Hard Bands - Full Range)">
+                <option value="f-rainbow-hard">Rainbow (Solid)</option>
+                <option value="f-gay-hard">Gay Men (Solid)</option>
+                <option value="f-lesbian-hard">Lesbian (Solid)</option>
+                <option value="f-bear-hard">Bear Brotherhood</option>
+                <option value="f-asexual-hard">Asexual (Solid)</option>
+                <option value="f-nonbinary-hard">Nonbinary (Solid)</option>
+            </optgroup>
+            <optgroup label="Custom">
+                <option value="custom">Custom (Pick Colors Below)</option>
+            </optgroup>
+        </select>
+    </div>
+    <div id="customColorGroup" class="group hidden">
+        <div id="customBgContainer">
+            <label>Custom Background Color</label>
+            <input type="color" id="customBg" value="#00ffff">
+        </div>
+        <label>Custom Glow Color</label>
+        <input type="color" id="customGlow" value="#00ffff">
+        <label>Custom Text Color</label>
+        <input type="color" id="customText" value="#ffffff">
+    </div>
+    <div class="group">
+        <label>Glow Intensity</label>
+        <select id="glowSelect">
+            <option value="none">None</option>
+            <option value="low">Low</option>
+            <option value="med" selected>Medium</option>
+            <option value="high">High</option>
+        </select>
+    </div>
+    <div class="group">
+        <label>Font Family</label>
+        <select id="fontSelect">
+            <option value="'Permanent Marker', cursive" style="font-family: 'Permanent Marker', cursive;">Permanent Marker</option>
+            <option value="'Orbitron', sans-serif" style="font-family: 'Orbitron', sans-serif;">Orbitron</option>
+            <option value="'Inter', sans-serif" selected style="font-family: 'Inter', sans-serif;">Inter</option>
+            <option value="Impact, sans-serif" style="font-family: Impact, sans-serif;">Impact</option>
+            <option value="'Courier New', monospace" style="font-family: 'Courier New', monospace;">Courier New</option>
+        </select>
+    </div>
+    <div id="groupGoal" class="group hidden">
+        <label>Milestone Marker (Shapes)</label>
+        <div class="shape-grid">
+            <div class="shape-btn active" data-shape="circle"><div class="v-circle"></div></div>
+            <div class="shape-btn" data-shape="square"><div class="v-square"></div></div>
+            <div class="shape-btn" data-shape="diamond"><div class="v-diamond"></div></div>
+            <div class="shape-btn" data-shape="heart">❤</div>
+            <div class="shape-btn" data-shape="star">★</div>
+        </div>
+    </div>
+    <div class="group" id="animSpeedGroup">
+        <label>Animation Speed (for Gradients/Tickers)</label>
+        <select id="animSpeed">
+            <option value="slow">Slow</option>
+            <option value="medium" selected>Medium</option>
+            <option value="fast">Fast</option>
+        </select>
+    </div>
+    <div id="chatTimeoutGroup" class="group hidden">
+        <label style="display: flex; align-items: center; justify-content: space-between;">
+            <span>Chat Message Timeout</span>
+            <label class="switch">
+                <input type="checkbox" id="timeoutToggle" checked>
+                <span class="slider round"></span>
+            </label>
+        </label>
+        <label style="margin-top: 10px; font-size: 0.8rem; color: #888;">Duration</label>
+        <div class="stepper">
+            <button type="button" id="timeoutDec" class="step-btn">-</button>
+            <input type="text" id="timeoutDisplay" value="1 Minute" readonly>
+            <button type="button" id="timeoutInc" class="step-btn">+</button>
+        </div>
+    </div>
+    <div id="chatColorGroup" class="group hidden">
+        <label>Chat Specific Colors</label>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label style="font-size: 0.8rem; margin-bottom: 2px;">Username</label>
+                <input type="color" id="chatUnameColor" value="#ffffff">
+            </div>
+            <div style="flex: 1;">
+                <label style="font-size: 0.8rem; margin-bottom: 2px;">Message</label>
+                <input type="color" id="chatMsgColor" value="#ffffff">
+            </div>
+        </div>
+    </div>
+
+    <div class="group">
+        <label>Bubble Border Style</label>
+        <select id="bubbleStyle">
+            <option value="plasma">Plasma (Animated Gradient)</option>
+            <option value="cyber">Cyber Tech (Angled Cut)</option>
+            <option value="pulse" selected>Neon Pulse (Breathing)</option>
+        </select>
+    </div>
+    <div id="eventListGroup" class="group hidden">
+        <label>Event List Display Options</label>
+        <p>The events overlay will display things like:</p>
+        <ul>
+            <li>(USER) tipped 20 tokens</li>
+            <li>NEW FOLLOWER (new line) USER</li>
+            <li>NEW SUBSCRIBER (USER)</li>
+            <li>(USER) Has dropped in</li>
+        </ul>
+    </div> 
+    </div>
+    <div class="sidebar-footer">
+    <button class="btn-copy" id="copyBtn">COPY CSS</button>
+    <textarea id="cssOutput" readonly></textarea>
+    <a href="/" class="back-link">← Back to Tools</a>
+    </div>
+</div>
+<div class="preview-container"><div id="preview-stage"></div></div>
+
+<script>
+    const colors = {
+        'n-blue': { bg: '#00ffff', glow: '#00ffff', text: '#00ffff', isGrad: 0 },
+        'n-pink': { bg: '#ff00aa', glow: '#ff00aa', text: '#ff00aa', isGrad: 0 },
+        'n-green': { bg: '#00ff00', glow: '#00ff00', text: '#00ff00', isGrad: 0 },
+        'n-purple': { bg: '#aa00ff', glow: '#aa00ff', text: '#aa00ff', isGrad: 0 },
+        'n-yellow': { bg: '#ffff00', glow: '#ffff00', text: '#ffff00', isGrad: 0 },
+        'n-orange': { bg: '#ffaa00', glow: '#ffaa00', text: '#ffaa00', isGrad: 0 },
+        'n-red': { bg: '#ff0000', glow: '#ff0000', text: '#ff0000', isGrad: 0 },
+        'n-cyan': { bg: '#00ffff', glow: '#00ffff', text: '#00ffff', isGrad: 0 },
+        'f-rainbow-soft': { bg: 'linear-gradient(to right, red, orange, yellow, green, blue, purple)', glow: 'white', text: '#ffffff', isGrad: 1 },
+        'f-gay-soft': { bg: 'linear-gradient(to right, #078d70, #26ceaa, #98e8c1, #ffffff, #7bade2, #5049cc, #3d1a78)', glow: '#26ceaa', text: '#ffffff', isGrad: 1 },
+        'f-lesbian-soft': { bg: 'linear-gradient(to right, #D52D00, #EF7627, #FF9A56, #FFFFFF, #D162A4, #B55690, #A30262)', glow: '#FF9A56', text: '#ffffff', isGrad: 1 },
+        'f-trans-soft': { bg: 'linear-gradient(to right, #5BCEFA, #F5A9B8, #FFFFFF, #F5A9B8, #5BCEFA)', glow: '#F5A9B8', text: '#ffffff', isGrad: 1 },
+        'f-asexual-soft': { bg: 'linear-gradient(to right, #000000, #A3A3A3, #FFFFFF, #800080)', glow: '#800080', text: '#ffffff', isGrad: 1 },
+        'f-nonbinary-soft': { bg: 'linear-gradient(to right, #FCF434, #FFFFFF, #9C59D1, #2C2C2C)', glow: '#9C59D1', text: '#ffffff', isGrad: 1 },
+        'f-rainbow-hard': { bg: 'linear-gradient(to right, #E40303 16.6%, #FF8C00 16.6% 33.2%, #FFED00 33.2% 49.8%, #008026 49.8% 66.4%, #004DFF 66.4% 83%, #750787 83%)', glow: 'white', text: '#ffffff', isGrad: 2 },
+        'f-gay-hard': { bg: 'linear-gradient(to right, #078d70 14.2%, #26ceaa 14.2% 28.4%, #98e8c1 28.4% 42.6%, #ffffff 42.6% 57.1%, #7bade2 57.1% 71.4%, #5049cc 71.4% 85.7%, #3d1a78 85.7%)', glow: '#26ceaa', text: '#ffffff', isGrad: 2 },
+        'f-lesbian-hard': { bg: 'linear-gradient(to right, #D52D00 14.2%, #EF7627 14.2% 28.4%, #FF9A56 28.4% 42.6%, #FFFFFF 42.6% 57.1%, #D162A4 57.1% 71.4%, #B55690 71.4% 85.7%, #A30262 85.7%)', glow: '#FF9A56', text: '#ffffff', isGrad: 2 },
+        'f-bear-hard': { bg: 'linear-gradient(to right, #623118 14.2%, #D5641C 14.2% 28.4%, #DDBC34 28.4% 42.6%, #FFECD6 42.6% 57.1%, #FFFFFF 57.1% 71.4%, #555555 71.4% 85.7%, #000000 85.7%)', glow: '#D5641C', text: '#ffffff', isGrad: 2 },
+        'f-asexual-hard': { bg: 'linear-gradient(to right, #000000 25%, #A3A3A3 25% 50%, #FFFFFF 50% 75%, #800080 75%)', glow: '#800080', text: '#ffffff', isGrad: 2 },
+        'f-nonbinary-hard': { bg: 'linear-gradient(to right, #FCF434 25%, #FFFFFF 25% 50%, #9C59D1 50% 75%, #2C2C2C 75%)', glow: '#9C59D1', text: '#ffffff', isGrad: 2 }
+    };
+    const souls = ["SilasBlu", "Kai_Butsu", "DarkWolf", "BigTipper", "Nightdragon"];
+    const chatMessages = [ // Added chat messages for more realistic preview
+        "Hey everyone, loving the stream!",
+        "First time here, hi all!",
+        "Can has cheeseburger?",
+        "Great music choice!",
+        "So hot!",
+        "This overlay looks sick!",
+        "Subbed! Keep it up!",
+        "Question: What's your favorite game?",
+	"!Tip 100",
+    ];
+    let curShape = 'circle', simInt, tSec = 270;
+    
+    // Timeout Stepper Logic
+    const timeoutValues = [30];
+    for(let i=1; i<=15; i++) timeoutValues.push(i*60);
+    let timeoutIndex = 1; // Default to 1 minute (index 1)
+    
+    function setShape() { 
+        curShape = this.dataset.shape; 
+        document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active')); 
+        this.classList.add('active'); 
+        update(); 
+    }
+
+    function getColorData() {
+        const colorVal = document.getElementById('colorSelect').value;
+        if (colorVal === 'custom') {
+            const bg = document.getElementById('customBg').value.toUpperCase();
+            const glow = document.getElementById('customGlow').value.toUpperCase();
+            const text = document.getElementById('customText').value.toUpperCase();
+            return { bg, glow, text, isGrad: 0 };
+        }
+        return colors[colorVal];
+    }
+
+    function getAnimDuration() {
+        const speed = document.getElementById('animSpeed').value;
+        return speed === 'slow' ? '12s' : speed === 'medium' ? '8s' : '4s';
+    }
+
+    function update() {
+        const type = document.getElementById('mainSelect').value;
+        const colorData = getColorData();
+        if (!colorData) return;
+        const glowLevel = document.getElementById('glowSelect').value;
+        const glowVal = glowLevel === 'none' ? '0' : glowLevel === 'low' ? '5px' : glowLevel === 'med' ? '12px' : '25px';
+        const font = document.getElementById('fontSelect').value;
+        const animDur = getAnimDuration();
+        const timeoutToggle = document.getElementById('timeoutToggle');
+        const bubbleStyleGroup = document.getElementById('bubbleStyle').closest('.group');
+        const timeout = timeoutToggle.checked ? (timeoutValues[timeoutIndex] * 1000) : 'none';
+
+        document.getElementById('groupGoal').classList.toggle('hidden', !type.startsWith('goal'));
+        document.getElementById('chatTimeoutGroup').classList.toggle('hidden', type !== 'chat');
+        document.getElementById('chatColorGroup').classList.toggle('hidden', type !== 'chat');
+        clearInterval(simInt); 
+        document.getElementById('preview-stage').innerHTML = '';
+        document.getElementById('preview-stage').style.fontFamily = font;
+        bubbleStyleGroup.classList.toggle('hidden', type !== 'chat');
+
+        // Toggle Custom Background Color visibility based on overlay type
+        const needsBg = ['chat', 'goal_tip', 'goal_ms'].includes(type);
+        const bgContainer = document.getElementById('customBgContainer');
+        if (bgContainer) bgContainer.style.display = needsBg ? 'block' : 'none';
+
+        let css = font.includes("'") ? `@import url('https://fonts.googleapis.com/css2?family=${font.split("'")[1].replace(/ /g, '+')}&display=swap');\n\n` : "";
+        css += `/* Reset */\nbody, #application { background: transparent !important; }\n\n`;
+
+        if (type === 'chat') {
+            simChat(colorData, font, glowVal, animDur, timeout); 
+            css += genChat(colorData, font, glowVal, animDur); 
+        } else if (type === 'alert') {
+            simAlert(colorData, font, glowVal, animDur);
+            css += genAlert(colorData, font, glowVal, animDur);
+        } else if (type === 'list_ev') {
+            simEventList(colorData, font, glowVal, animDur);
+            css += genEventList(colorData, font, glowVal, animDur);
+        } else if (type.startsWith('goal')) { 
+            simGoal(colorData, font, glowVal, type==='goal_tip'?'Tip Goal':'Milestone Goal', curShape); 
+            css += genGoal(colorData, font, glowVal, curShape); 
+        } else if (type === 'list_tk') { 
+            simTicker(colorData, font, glowVal, animDur); 
+            css += genLabel(colorData, font, glowVal, animDur); 
+        } else if (type === 'label_ct') { 
+            simTimer(colorData, font, glowVal); 
+            css += genLabel(colorData, font, glowVal, animDur); 
+        } else { 
+            let t = type==='label_lt'?"BigTipper":type==='label_lf'?"SilasBlu":type==='label_tp'?"Kai_Butsu":"DarkWolf"; 
+            simLabel(colorData, font, glowVal, t); 
+            css += genLabel(colorData, font, glowVal, animDur); 
+        }
+        document.getElementById('cssOutput').value = css;
+    }
+
+    function genChat(c, f, g, dur) {
+        const bStyle = document.getElementById('bubbleStyle').value;
+        const unameColor = document.getElementById('chatUnameColor').value;
+        const msgColor = document.getElementById('chatMsgColor').value;
+        
+        // Remove the override: finalFont now strictly follows the user's font selection (f)
+        const finalFont = f;
+        
+        let code = `/* BUBBLE: ${bStyle.toUpperCase()} */\n`;
+        code += `.chat-message {\n`;
+        code += `  font-family: ${finalFont} !important;\n`;
+        code += `  color: ${msgColor} !important;\n`;
+        
+        // Apply specific border style logic
+        if (bStyle === 'cyber') {
+            code += `  clip-path: polygon(0% 0%, 95% 0%, 100% 25%, 100% 100%, 8% 100%, 0% 80%) !important;\n`;
+            code += `  border-left: 5px solid ${c.bg} !important;\n`;
+        } else if (bStyle === 'plasma') {
+            code += `  border: 2px solid transparent !important;\n  background-image: linear-gradient(rgba(10,10,10,0.95), rgba(10,10,10,0.95)), linear-gradient(90deg, #ff00ff, ${c.bg}, #ff00ff) !important;\n  background-origin: border-box !important;\n  background-clip: padding-box, border-box !important;\n  animation: plasmaRotate 3s linear infinite !important;\n`;
+        } else {
+            code += `  border: 2px solid ${c.bg} !important;\n  animation: pulseGlow 2s infinite ease-in-out !important;\n`;
+        }
+        
+        code += `  text-shadow: 0 0 5px ${c.glow} !important;\n}\n`;
+        code += `/* Username */\n.username, .username span[style], a, span[style*="rgb"] {\n  background: ${c.bg} !important; color: ${unameColor} !important; ${c.isGrad===1?'background-size:400% 400%; animation:rf 8s linear infinite;':''} padding: 2px 8px !important; border-radius: 6px !important; display: inline-block !important;\n}\n`;
+        return (c.isGrad===1 ? `@keyframes rf {0%{background-position:0% 50%}100%{background-position:100% 50%}}\n` : "") + code;
+    }
+
+    function genGoal(c, f, g, s) {
+        let code = `/* GOAL BAR */\n.progress, [class*="progress"] { background: rgba(0,0,0,0.7) !important; border: 2px solid #555 !important; height: 32px !important; border-radius: 16px !important; overflow: visible !important; position: relative !important; }\n`;
+        code += `.progress div:last-child, [class*="progress"] div[style*="width"] { background: ${c.bg} !important; height: 100% !important; border-radius: 16px !important; position: absolute !important; left: 0 !important; top: 0 !important; ${c.isGrad===1 ? 'background-size:400% 400%; animation:rf 8s linear infinite;' : ''} }\n`;
+        if (s === 'heart') { // Changed to use the heart emoji directly
+            code += `div[title], [class*="marker"] { background: transparent !important; border: none !important; top: 50% !important; transform: translate(-50%, -50%) !important; width: 16px !important; height: 16px !important; color: ${c.text} !important; -webkit-text-stroke: 1px ${c.glow} !important; font-size: 16px; line-height: 16px; text-align: center; }\n`;
+            code += `div[title]::before, [class*="marker"]::before { content: "❤"; }\n`;
+        } else if (s === 'star') {
+            code += `div[title], [class*="marker"] { background: transparent !important; border: none !important; top: 50% !important; transform: translate(-50%, -50%) !important; width: 16px !important; height: 16px !important; color: ${c.text} !important; -webkit-text-stroke: 1px ${c.glow} !important; font-size: 16px; line-height: 16px; text-align: center; }\n`;
+            code += `div[title]::before, [class*="marker"]::before { content: "★"; }\n`;
+        } else {
+            code += `div[title], [class*="marker"] { background: ${c.text} !important; border-radius: ${s==='circle'?'50%':'0'} !important; transform: ${s==='diamond'?'translate(-50%,-50%) rotate(45deg)':'translate(-50%,-50%)'} !important; width: 14px !important; height: 14px !important; top: 50% !important; border: 2px solid ${c.glow} !important; }\n`;
+        }
+        return (c.isGrad===1 ? `@keyframes rf {0%{background-position:0% 50%}100%{background-position:100% 50%}}\n` : "") + code;
+    }
+
+    function genLabel(c, f, g, dur) {
+        return (c.isGrad===1 ? `@keyframes rf {0%{background-position:0% 50%}100%{background-position:100% 50%}}\n` : "") + `/* LABELS */\n.scrollable.text-3xl, .event, .ticker-wrap, span[style*="rgb"] { font-family: ${f} !important; color: ${c.text} !important; text-shadow: 0 0 ${g} ${c.glow} !important; ${c.isGrad>=1 ? `background:${c.bg};-webkit-background-clip:text;color:transparent;` : ''} ${c.isGrad===1 ? `background-size:400% 400%;animation:rf ${dur} linear infinite;` : ''} background-color: transparent !important; }\n`;
+    }
+
+    function genAlert(c, f, g, dur) {
+        let code = `/* ALERT OVERLAY */\n`;
+        const textStyle = `font-family: ${f} !important; color: ${c.text} !important; text-shadow: 0 0 ${g} ${c.glow} !important; ${c.isGrad>=1 ? `background:${c.bg};-webkit-background-clip:text;color:transparent;` : ''} ${c.isGrad===1 ? `background-size:400% 400%;animation:rf ${dur} linear infinite;` : ''}`;
+        code += `.alert-text, .alert-message { ${textStyle} text-align: center !important; }\n`;
+        code += `.alert-text span:first-child { display: block !important; font-size: 1.5rem !important; margin-bottom: 0.5rem !important; text-transform: uppercase !important; }\n`;
+        code += `.alert-text span:last-child { font-size: 3rem !important; font-weight: 900 !important; }\n`;
+        return (c.isGrad===1 ? `@keyframes rf {0%{background-position:0% 50%}100%{background-position:100% 50%}}\n` : "") + code;
+    }
+
+    function genEventList(c, f, g, dur) {
+        let code = `/* EVENT LIST / STATS */\n`;
+        const textStyle = `font-family: ${f} !important; color: ${c.text} !important; text-shadow: 0 0 ${g} ${c.glow} !important; ${c.isGrad>=1 ? `background:${c.bg};-webkit-background-clip:text;color:transparent;` : ''} ${c.isGrad===1 ? `background-size:400% 400%;animation:rf ${dur} linear infinite;` : ''}`;
+        code += `.event-list, .session-stats { display: flex !important; flex-direction: column !important; gap: 10px !important; }\n`;
+        code += `.event-item, .stat-item { display: block !important; margin-bottom: 5px !important; ${textStyle} font-size: 1.2rem !important; }\n`;
+        code += `.event-item span, .stat-item span { display: block !important; }\n`;
+        return (c.isGrad===1 ? `@keyframes rf {0%{background-position:0% 50%}100%{background-position:100% 50%}}\n` : "") + code;
+    }
+
+    function simChat(c, f, g, dur, timeout) {
+        const stage = document.getElementById('preview-stage');
+        const unameColor = document.getElementById('chatUnameColor').value;
+        const msgColor = document.getElementById('chatMsgColor').value;
+        function add() {
+            const m = document.createElement('div');
+            m.className = 'p-bubble'; 
+            m.style.fontFamily = f;
+            const bubbleBg = c.isGrad === 1 ? `${c.bg} !important; background-size:400% 400%; animation:rf ${dur} linear infinite;` : c.bg;
+            m.style.background = `linear-gradient(to right, rgba(25,25,25,0.9), ${bubbleBg})`;
+            m.style.borderColor = c.isGrad ? '#fff' : c.bg; 
+            m.style.boxShadow = `0 0 ${g} ${c.glow}`;
+            const unameStyle = c.isGrad===1 ? `background:${c.bg}; background-size:400% 400%; animation:rf ${dur} linear infinite;` : `background:${c.bg};`;
+            const randomMsg = chatMessages[Math.floor(Math.random() * chatMessages.length)];
+            const randomUser = souls[Math.floor(Math.random() * souls.length)];
+            m.innerHTML = `<span class="p-uname" style="${unameStyle} color:${unameColor}">${randomUser}</span><span class="p-message" style="color:${msgColor}">${randomMsg}</span>`;
+            
+            // Apply bubble style classes
+            const bStyle = document.getElementById('bubbleStyle').value;
+            m.classList.add('chat-message'); // Add base class
+            m.classList.add(`style-${bStyle}`); // Add specific style class
+            // Set --glow variable for preview
+            m.style.setProperty('--glow', c.glow);
+
+            stage.appendChild(m); 
+            if (timeout !== 'none') {
+                setTimeout(() => { // Use fadeOut animation
+                    m.style.opacity = 0;
+                    setTimeout(() => { if (m.parentNode) m.parentNode.removeChild(m); }, 500); // Remove after fade out
+                }, parseInt(timeout));
+            }
+            if (stage.children.length > 10) stage.removeChild(stage.firstChild);
+        }
+        add(); 
+        simInt = setInterval(add, 2500);
+    }
+
+    function simGoal(c, f, g, txt, s) {
+        let marker;
+        if (s === 'heart') { // Changed to use the heart emoji directly
+            marker = `<div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:${c.text}; -webkit-text-stroke:1px ${c.glow}; font-size:16px;">❤</div>`;
+        } else if (s === 'star') {
+            marker = `<div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:${c.text}; -webkit-text-stroke:1px ${c.glow}; font-size:16px;">★</div>`;
+        } else {
+            marker = `<div class="v-${s}" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) ${s==='diamond'?'rotate(45deg)':''}; background:${c.text}; border:2px solid ${c.glow};"></div>`;
+        }
+        const fillStyle = c.isGrad===1 ? `background:${c.bg}; background-size:400% 400%; animation:rf 8s linear infinite;` : `background:${c.bg};`;
+        const goalTextStyle = `font-family:${f};`;
+        document.getElementById('preview-stage').innerHTML = `<div style="width:100%; ${goalTextStyle}"><div style="display:flex; justify-content:space-between; color:#fff; font-size:24px;"><span>${txt}</span><span>1500 / 3000</span></div><div class="p-goal-trk"><div class="p-goal-fill" style="${fillStyle} width:50%;"></div>${marker}</div></div>`;
+    }
+
+    function simTicker(c, f, g, dur) {
+        const durSec = parseInt(dur);
+        const animStyle = `animation:tk ${durSec * 2}s linear infinite;`; // Adjust for visibility
+        const textStyle = c.isGrad>=1 ? `background:${c.bg}; -webkit-background-clip:text; color:transparent; ${c.isGrad===1 ? `background-size:400% 400%; animation:rf ${dur} linear infinite;` : ''}` : `color:${c.text}; text-shadow:0 0 ${g} ${c.glow};`;
+        document.getElementById('preview-stage').innerHTML = `<div style="width:100%; overflow:hidden; font-family:${f}; font-size:24px;"><div style="display:inline-block; ${animStyle} white-space:nowrap; ${textStyle}">SilasBlu (100) &nbsp;&nbsp;&nbsp; DarkWolf (690) &nbsp;&nbsp;&nbsp; Kai_Butsu (1000) &nbsp;&nbsp;&nbsp; BigTipper (5000) &nbsp;&nbsp;&nbsp;</div></div>`;
+    }
+
+    function simTimer(c, f, g) {
+        simInt = setInterval(() => { 
+            tSec--; 
+            let m = Math.floor(tSec/60), s = tSec%60; 
+            const textStyle = `font-family:${f}; font-size:30px; color:${c.text}; text-shadow:0 0 ${g} ${c.glow}; text-align:center`;
+            document.getElementById('preview-stage').innerHTML = `<div style="${textStyle}">Timer: Hydrate ${m}:${s<10?'0':''}${s}</div>`; 
+        }, 1000);
+    }
+
+    function simLabel(c, f, g, t) {
+        const textStyle = c.isGrad>=1 ? `font-family:${f}; font-size:50px; background:${c.bg}; -webkit-background-clip:text; color:transparent; text-shadow:0 0 ${g} ${c.glow}; text-align:center; ${c.isGrad===1 ? 'background-size:400% 400%; animation:rf 8s linear infinite;' : ''}` : `font-family:${f}; font-size:50px; color:${c.text}; --preview-glow:${c.glow}; text-shadow:0 0 ${g} ${c.glow}; text-align:center; animation: pulse-glow 2s infinite alternate;`;
+        document.getElementById('preview-stage').innerHTML = `<div style="${textStyle}">${t.toUpperCase()}</div>`;
+    }
+
+    function simAlert(c, f, g, dur) {
+        const stage = document.getElementById('preview-stage');
+        const textStyle = c.isGrad>=1 ? `background:${c.bg}; -webkit-background-clip:text; color:transparent; ${c.isGrad===1 ? `background-size:400% 400%; animation:rf ${dur} linear infinite;` : ''}` : `color:${c.text}; text-shadow:0 0 ${g} ${c.glow};`;
+        stage.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:${f}; text-align:center; ${textStyle}"><span style="font-size:1.5rem; margin-bottom:0.5rem; text-transform:uppercase;">NEW FOLLOWER</span><span style="font-size:3rem; font-weight:900;">SilasBlu</span></div>`;
+    }
+
+    function simEventList(c, f, g, dur) {
+        const stage = document.getElementById('preview-stage');
+        const textStyle = c.isGrad>=1 ? `background:${c.bg}; -webkit-background-clip:text; color:transparent; ${c.isGrad===1 ? `background-size:400% 400%; animation:rf ${dur} linear infinite;` : ''}` : `color:${c.text}; text-shadow:0 0 ${g} ${c.glow};`;
+        stage.innerHTML = `<div style="display:flex; flex-direction:column; gap:10px; font-family:${f}; ${textStyle} font-size:1.2rem;"><div>Latest Follower: SilasBlu</div><div>Latest Sub: DarkWolf</div><div>Latest Tip: Kai_Butsu (1000)</div><div>Goal: 1500 / 3000 (50%)</div></div>`;
+    }
+
+    function copyOutput() { 
+        const output = document.getElementById('cssOutput');
+        output.select(); 
+        alert("CSS Copied!"); 
+    }
+
+    function resetOptions() {
+        document.getElementById('mainSelect').value = 'chat';
+        document.getElementById('colorSelect').value = 'f-rainbow-soft';
+        document.getElementById('customColorGroup').classList.add('hidden');
+        document.getElementById('glowSelect').value = 'med';
+        document.getElementById('fontSelect').value = "'Inter', sans-serif";
+        document.getElementById('animSpeed').value = 'medium';
+        
+        document.getElementById('chatUnameColor').value = '#ffffff';
+        document.getElementById('chatMsgColor').value = '#ffffff';
+
+        // Reset Timeout
+        document.getElementById('timeoutToggle').checked = true; // Default ON
+        timeoutIndex = 1; // 1 Minute
+        updateTimeoutDisplay();
+        document.getElementById('timeoutDec').disabled = false;
+        document.getElementById('timeoutInc').disabled = false;
+        
+        curShape = 'circle';
+        document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.shape-btn[data-shape="circle"]').classList.add('active');
+        update();
+    }
+
+    function updateTimeoutDisplay() {
+        const val = timeoutValues[timeoutIndex];
+        const text = val < 60 ? val + " Seconds" : (val/60) + (val===60 ? " Minute" : " Minutes");
+        document.getElementById('timeoutDisplay').value = text;
+        update();
+    }
+
+    document.getElementById('timeoutToggle').addEventListener('change', function() {
+        const disabled = !this.checked;
+        document.getElementById('timeoutDec').disabled = disabled;
+        document.getElementById('timeoutInc').disabled = disabled;
+        document.getElementById('timeoutDisplay').style.opacity = disabled ? '0.5' : '1';
+        update();
+    });
+    
+    document.getElementById('timeoutDec').addEventListener('click', () => { if(timeoutIndex > 0) { timeoutIndex--; updateTimeoutDisplay(); } });
+    document.getElementById('timeoutInc').addEventListener('click', () => { if(timeoutIndex < timeoutValues.length - 1) { timeoutIndex++; updateTimeoutDisplay(); } });
+
+
+
+    // Event Listeners
+    document.querySelectorAll('select, input').forEach(el => el.addEventListener('change', update));
+    document.querySelectorAll('.shape-btn').forEach(btn => btn.addEventListener('click', setShape));
+    document.getElementById('copyBtn').addEventListener('click', copyOutput); 
+    document.getElementById('colorSelect').addEventListener('change', () => {
+        const isCustom = document.getElementById('colorSelect').value === 'custom';
+        document.getElementById('customColorGroup').classList.toggle('hidden', !isCustom);
+        update();
+    });
+
+    update();
+</script>
+</body>
+</html>

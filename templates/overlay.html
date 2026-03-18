@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emoji Buddy Overlay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&family=Orbitron:wght@400;900&family=Permanent+Marker&family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background: transparent; }
+        
+        #container {
+            position: absolute; 
+            top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            box-sizing: border-box; 
+            transition: all 0.5s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #header {
+            padding: 10px;
+            font-weight: bold;
+            border-bottom: 2px solid;
+            flex-shrink: 0;
+            z-index: 10;
+            text-align: center;
+            font-size: 48px;
+        }
+
+        #play-area {
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        .viewer {
+            position: absolute;
+            white-space: nowrap;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            will-change: transform;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        /* Default fallback size increased to 9em */
+        .emoji-char { font-size: 8em; line-height: 1; }
+        .name-tag { font-size: 1.5em; } /* Bumped name size slightly too so it's readable */
+        
+        /* Heart animation for !pet */
+        .heart-pop {
+            position: absolute;
+            font-size: 5em; /* Bigger hearts for bigger pets */
+            animation: popUp 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        @keyframes popUp {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -150%) scale(1.5); opacity: 1; }
+            100% { transform: translate(-50%, -300%) scale(1); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="header"></div>
+        <div id="play-area"></div>
+    </div>
+    <audio id="squeak" src="/emojibuddy/static/squeak.mp3"></audio>
+
+    <script>
+        const CHANNEL_ID = "REPLACE_ME_CHANNEL_ID";
+        let viewers = {};
+        let lastEventTime = 0;
+        let config = {};
+
+        // Canvas/Physics state
+        const container = document.getElementById('container');
+        const playArea = document.getElementById('play-area');
+        let cWidth = playArea.clientWidth;
+        let cHeight = playArea.clientHeight;
+
+        function updateSize() {
+            cWidth = playArea.clientWidth;
+            cHeight = playArea.clientHeight;
+        }
+        new ResizeObserver(updateSize).observe(playArea);
+
+        async function fetchData() {
+            try {
+                const res = await fetch(`/emojibuddy/api/data/${CHANNEL_ID}?since=${lastEventTime}`);
+                const data = await res.json();
+                
+                if (data.config) applyConfig(data.config);
+                if (data.viewers) updateViewers(data.viewers);
+                if (data.events) handleEvents(data.events);
+
+            } catch (e) { console.error(e); }
+            setTimeout(fetchData, 2000); 
+        }
+
+        function applyConfig(cfg) {
+            config = cfg;
+            
+            // 1. Color Parsing
+            let r=0, g=0, b=0;
+            if(cfg.bg_color && cfg.bg_color.length === 7) {
+                r = parseInt(cfg.bg_color.substr(1,2), 16);
+                g = parseInt(cfg.bg_color.substr(3,2), 16);
+                b = parseInt(cfg.bg_color.substr(5,2), 16);
+            }
+            container.style.backgroundColor = `rgba(${r},${g},${b},${cfg.box_opacity})`;
+            container.style.fontFamily = cfg.font_family || 'Nunito';
+            
+            // 2. Border Logic
+            if (cfg.show_border) {
+                container.style.border = `3px solid ${cfg.border_color}`;
+                container.style.borderRadius = `${cfg.box_border_radius}px`;
+            } else {
+                container.style.border = 'none';
+            }
+
+            // 3. Header
+            const header = document.getElementById('header');
+            header.style.display = cfg.show_title ? 'block' : 'none';
+            header.innerText = cfg.collection_name;
+            header.style.color = cfg.header_color;
+            header.style.borderBottomColor = cfg.header_color;
+        }
+
+        function updateViewers(list) {
+            const currentUsers = new Set(list.map(u => u.username));
+            for (let name in viewers) {
+                if (!currentUsers.has(name)) {
+                    viewers[name].element.remove();
+                    delete viewers[name];
+                }
+            }
+            list.forEach(u => {
+                if (!viewers[u.username]) {
+                    createViewer(u);
+                } else {
+                    updateViewerStyle(viewers[u.username], u);
+                }
+            });
+        }
+
+        function createViewer(u) {
+            const el = document.createElement('div');
+            el.className = 'viewer';
+            playArea.appendChild(el);
+            updateSize();
+            viewers[u.username] = {
+                element: el,
+                x: Math.random() * (cWidth - 50),
+                y: Math.random() * (cHeight - 50),
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                data: u
+            };
+            updateViewerStyle(viewers[u.username], u);
+        }
+
+        function updateViewerStyle(vObj, data) {
+            vObj.data = data;
+            let emoji = data.emoji; 
+            if (!emoji) {
+                emoji = data.is_subscriber ? config.subscriber_emoji : config.default_emoji;
+            }
+            let color = data.color || config.text_color;
+            vObj.element.innerHTML = `<span class="emoji-char">${emoji || '🙂'}</span><span class="name-tag" style="color:${color}">${data.username}</span>`;
+        }
+
+        function handleEvents(events) {
+            events.forEach(e => {
+                if (e.timestamp > lastEventTime) {
+                    lastEventTime = e.timestamp;
+                    if (e.type === 'pet') {
+                        triggerPet(JSON.parse(e.data));
+                    }
+                }
+            });
+        }
+
+        function triggerPet(data) {
+            const targetName = data.target;
+            const v = viewers[targetName];
+            if (v) {
+                const heart = document.createElement('div');
+                heart.className = 'heart-pop';
+                heart.innerText = '❤️';
+                heart.style.left = (v.x + 20) + 'px';
+                heart.style.top = (v.y - 20) + 'px';
+                playArea.appendChild(heart);
+                const audio = document.getElementById('squeak');
+                if(audio) { audio.volume = 0.5; audio.play().catch(err => {}); }
+                setTimeout(() => heart.remove(), 1000);
+            }
+        }
+
+        function loop() {
+            if (cWidth < 10 || cHeight < 10) return requestAnimationFrame(loop);
+            for (let name in viewers) {
+                const v = viewers[name];
+                const el = v.element;
+                v.x += v.vx; v.y += v.vy;
+                if (v.x <= 0 || v.x + el.offsetWidth >= cWidth) { v.vx *= -1; v.x = Math.max(0, Math.min(v.x, cWidth - el.offsetWidth)); }
+                if (v.y <= 0 || v.y + el.offsetHeight >= cHeight) { v.vy *= -1; v.y = Math.max(0, Math.min(v.y, cHeight - el.offsetHeight)); }
+                el.style.transform = `translate(${v.x}px, ${v.y}px)`;
+            }
+            requestAnimationFrame(loop);
+        }
+        fetchData();
+        loop();
+    </script>
+</body>
+</html>
