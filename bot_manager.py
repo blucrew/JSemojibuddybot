@@ -5,6 +5,7 @@ import ssl
 import websockets
 import os
 import base64
+import emoji
 from dotenv import load_dotenv
 from db import DBManager
 
@@ -164,10 +165,13 @@ class BotManager:
             elif content.lower().startswith("!avatar") and is_sub:
                 parts = content.split(" ")
                 if len(parts) > 1:
-                    emoji = parts[1]
-                    print(f"🎭 AVATAR DETECTED! {author} -> {emoji}")
-                    self.db.update_viewer(channel_id, author, emoji=emoji)
-                    await self.send_chat(ws, channel_id, f"@{author} your avatar has been updated! {emoji}")
+                    avatar = parts[1]
+                    if emoji.is_emoji(avatar):
+                        print(f"🎭 AVATAR DETECTED! {author} -> {avatar}")
+                        self.db.update_viewer(channel_id, author, emoji=avatar)
+                        await self.send_chat(ws, channel_id, f"@{author} your avatar has been updated! {avatar}")
+                    else:
+                        await self.send_chat(ws, channel_id, f"@{author} please use a single emoji, e.g. !avatar 🐸")
             else:
                 self.db.update_viewer(channel_id, author, is_subscriber=is_sub)
 
