@@ -190,6 +190,10 @@ async def handle_dashboard(request):
         s['chk_tall'] = 'checked' if layout == 'tall' else ''
         s['chk_wide'] = 'checked' if layout == 'wide' else ''
 
+        physics = s.get('physics_mode', 'chaos')
+        s['chk_chaos'] = 'checked' if physics == 'chaos' else ''
+        s['chk_march'] = 'checked' if physics == 'march' else ''
+
         s['show_title_checked'] = 'checked' if s.get('show_title', 1) else ''
         s['show_border_checked'] = 'checked' if s.get('show_border', 0) else ''
         if 'box_border_radius' not in s: s['box_border_radius'] = 15
@@ -322,11 +326,11 @@ async def handle_save(request):
     viewer_updates = {}
     
     allowed_keys = [
-        'collection_name', 'viewer_timeout_minutes', 'font_family', 
-        'streamer_own_emoji', 'subscriber_emoji', 'default_emoji', 
-        'bg_color', 'header_color', 'show_title', 
-        'text_color', 'border_color', 'show_border', 
-        'box_opacity', 'box_border_radius', 'layout_mode'
+        'collection_name', 'viewer_timeout_minutes', 'font_family',
+        'streamer_own_emoji', 'subscriber_emoji', 'default_emoji',
+        'bg_color', 'header_color', 'show_title',
+        'text_color', 'border_color', 'show_border',
+        'box_opacity', 'box_border_radius', 'layout_mode', 'physics_mode'
     ]
 
     config_data['show_title'] = 1 if 'show_title' in data else 0

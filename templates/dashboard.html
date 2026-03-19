@@ -333,7 +333,7 @@ function copySource() {
 }
 
 function copyChatCmd() {
-    const text = "Use !pet @user to show love! Subs can also use !avatar 👽 (or any standard emoji) and !paint color to change their text color e.g. !Paint Blue";
+    const text = "Use !pet @user or !boop @user to interact! Subs can also use !emoji 👽 (any standard emoji) to change their buddy, and !namecolor pink (or !namecolor #ff6600) to change their name color.";
     navigator.clipboard.writeText(text).then(() => {
         alert("Instructions copied to clipboard!");
     });
@@ -458,6 +458,16 @@ function startStreamMapAnimation() {
                 <label class="layout-option">
                     <div class="shape-icon shape-wide"></div>
                     <input type="radio" name="layout_mode" value="wide" {chk_wide} onclick="selectLayout('wide')">Wide
+                </label>
+            </div>
+
+            <label style="margin-top:12px;">Physics Mode</label>
+            <div class="layout-selector">
+                <label class="layout-option">
+                    <input type="radio" name="physics_mode" value="chaos" {chk_chaos} onclick="this.form.physics_mode.value='chaos'">🎲 Chaos
+                </label>
+                <label class="layout-option">
+                    <input type="radio" name="physics_mode" value="march" {chk_march} onclick="this.form.physics_mode.value='march'">🪖 March
                 </label>
             </div>
 
@@ -624,16 +634,22 @@ function startStreamMapAnimation() {
                 <div>Triggers a heart animation & sound effect.</div>
                 
                 <div class="cmd-box" style="margin-top:15px;">
-                    <span>!paint red</span>
-                    <span class="tag tag-sub">SUBS</span>
+                    <span>!boop @user</span>
+                    <span class="tag tag-pub">EVERYONE</span>
                 </div>
-                <div>Changes their username color.</div>
+                <div>Boops another viewer (shows their emoji).</div>
 
                 <div class="cmd-box" style="margin-top:15px;">
-                    <span>!avatar 👽</span>
+                    <span>!namecolor pink</span>
                     <span class="tag tag-sub">SUBS</span>
                 </div>
-                <div>Changes their personal emoji.</div>
+                <div>Changes their username color. Accepts color names (pink, coral, hotpink...) or hex codes (#ff6600).</div>
+
+                <div class="cmd-box" style="margin-top:15px;">
+                    <span>!emoji 👽</span>
+                    <span class="tag tag-sub">SUBS</span>
+                </div>
+                <div>Changes their personal emoji to any standard emoji.</div>
             </div>
         </div>
 
@@ -645,7 +661,7 @@ function startStreamMapAnimation() {
             <div class="inst-body">
                 <p>Paste this into your chat to teach viewers how to play:</p>
                 <div class="chat-copy-box" onclick="copyChatCmd()" style="background:#eee; padding:10px; border-radius:5px; font-size:0.8em; cursor:pointer;">
-                    Use !pet @user to show love! Subs can also use !avatar 👽 (or any standard emoji) and !paint color to change their text color e.g. !Paint Blue
+                    Use !pet @user or !boop @user to interact! Subs can also use !emoji 👽 (any standard emoji) to change their buddy, and !namecolor pink (or !namecolor #ff6600) to change their name color.
                 </div>
             </div>
         </div>

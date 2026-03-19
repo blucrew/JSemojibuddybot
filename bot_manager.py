@@ -22,6 +22,15 @@ class BotManager:
         self.db = DBManager(db_path=db_path)
         self.running = True
 
+    def get_viewer_display_emoji(self, channel_id, username, streamer):
+        viewers = self.db.get_viewers(channel_id)
+        v = next((v for v in viewers if v["username"].lower() == username.lower()), None)
+        if v and v.get("emoji"):
+            return v["emoji"]
+        if streamer and username.lower() == (streamer.get("streamer_username") or "").lower():
+            return streamer.get("streamer_own_emoji", "👑")
+        return streamer.get("default_emoji", "🙂") if streamer else "🙂"
+
     async def send_chat(self, ws, channel_id, text):
         payload = {
             "command": "message",
@@ -121,57 +130,75 @@ class BotManager:
             self.db.add_active_viewer(channel_id, author)
 
             # COMMANDS
-            if content.lower().startswith("!help"):
-                await self.send_chat(ws, channel_id, "✨ Commands: !boop @user | !pet @user | !avatar 🎭 (subs) | !paint #hex (subs)")
+            if content.lower().startswith("!emojihelp"):
+                await self.send_chat(ws, channel_id, "✨ Commands: !boop @user | !pet @user | !emoji 🎭 (subs) | !namecolor pink (subs) | !emojimarch / !emojichaos (streamer)")
 
             elif content.lower().startswith("!boop"):
                 parts = content.split(" ")
                 if len(parts) > 1:
                     target = parts[1].replace("@", "")
-                    viewer = self.db.get_viewers(channel_id)
-                    target_data = next((v for v in viewer if v["username"].lower() == target.lower()), None)
                     streamer = self.db.get_streamer(channel_id)
-                    default_emoji = streamer.get("default_emoji", "🙂") if streamer else "🙂"
-                    target_emoji = target_data["emoji"] if target_data and target_data.get("emoji") else default_emoji
+                    source_emoji = self.get_viewer_display_emoji(channel_id, author, streamer)
+                    target_emoji = self.get_viewer_display_emoji(channel_id, target, streamer)
                     print(f"👉 BOOP! {author} -> {target}")
-                    await self.send_chat(ws, channel_id, f"@{author} boops @{target}! {target_emoji} ✨")
+                    await self.send_chat(ws, channel_id, f"{source_emoji} {author} booped {target_emoji} {target}!")
+                    self.db.log_event(channel_id, "boop", json.dumps({"source": author, "target": target}))
 
             elif content.lower().startswith("!pet"):
-                target = author 
                 parts = content.split(" ")
                 if len(parts) > 1:
                     target = parts[1].replace("@", "")
-                
-                print(f"❤️ PET DETECTED! From {author} -> {target}")
-                self.db.log_event(channel_id, "pet", json.dumps({"source": author, "target": target}))
+                    streamer = self.db.get_streamer(channel_id)
+                    streamer_username = (streamer.get("streamer_username") or "") if streamer else ""
+                    if author.lower() != streamer_username.lower():
+                        return
+                    source_emoji = self.get_viewer_display_emoji(channel_id, author, streamer)
+                    target_emoji = self.get_viewer_display_emoji(channel_id, target, streamer)
+                    print(f"❤️ PET! {author} -> {target}")
+                    await self.send_chat(ws, channel_id, f"{source_emoji} {author} petted {target_emoji} {target}!")
+                    self.db.log_event(channel_id, "pet", json.dumps({"source": author, "target": target}))
 
-            elif content.lower().startswith("!paint") and not is_sub:
-                await self.send_chat(ws, channel_id, f"@{author} !paint is for subscribers only. 🎨")
+            elif content.lower().startswith("!emojimarch"):
+                streamer = self.db.get_streamer(channel_id)
+                streamer_username = (streamer.get("streamer_username") or "") if streamer else ""
+                if author.lower() == streamer_username.lower():
+                    self.db.update_config(channel_id, {"physics_mode": "march"})
+                    self.db.log_event(channel_id, "mode_change", json.dumps({"mode": "march"}))
 
-            elif content.lower().startswith("!paint") and is_sub:
+            elif content.lower().startswith("!emojichaos"):
+                streamer = self.db.get_streamer(channel_id)
+                streamer_username = (streamer.get("streamer_username") or "") if streamer else ""
+                if author.lower() == streamer_username.lower():
+                    self.db.update_config(channel_id, {"physics_mode": "chaos"})
+                    self.db.log_event(channel_id, "mode_change", json.dumps({"mode": "chaos"}))
+
+            elif content.lower().startswith("!namecolor") and not is_sub:
+                await self.send_chat(ws, channel_id, f"@{author} !namecolor is for subscribers only. 🎨")
+
+            elif content.lower().startswith("!namecolor") and is_sub:
                 parts = content.split(" ")
                 if len(parts) > 1:
                     color = parts[1]
-                    if re.fullmatch(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})", color):
+                    if re.fullmatch(r"[a-zA-Z]+", color) or re.fullmatch(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})", color):
                         print(f"🎨 PAINT DETECTED! {author} -> {color}")
                         self.db.update_viewer(channel_id, author, color=color)
                         await self.send_chat(ws, channel_id, f"@{author} your buddy has been repainted! 🎨")
                     else:
-                        await self.send_chat(ws, channel_id, f"@{author} please use a valid hex color, e.g. !paint #ff6600")
+                        await self.send_chat(ws, channel_id, f"@{author} try a color name like !namecolor pink or a hex code like !namecolor #ff6600")
 
-            elif content.lower().startswith("!avatar") and not is_sub:
-                await self.send_chat(ws, channel_id, f"@{author} !avatar is for subscribers only. 🎭")
+            elif content.lower().startswith("!emoji") and not is_sub:
+                await self.send_chat(ws, channel_id, f"@{author} !emoji is for subscribers only. 🎭")
 
-            elif content.lower().startswith("!avatar") and is_sub:
+            elif content.lower().startswith("!emoji") and is_sub:
                 parts = content.split(" ")
                 if len(parts) > 1:
                     avatar = parts[1]
                     if emoji.is_emoji(avatar):
-                        print(f"🎭 AVATAR DETECTED! {author} -> {avatar}")
+                        print(f"🎭 EMOJI DETECTED! {author} -> {avatar}")
                         self.db.update_viewer(channel_id, author, emoji=avatar)
-                        await self.send_chat(ws, channel_id, f"@{author} your avatar has been updated! {avatar}")
+                        await self.send_chat(ws, channel_id, f"@{author} your buddy has been updated! {avatar}")
                     else:
-                        await self.send_chat(ws, channel_id, f"@{author} please use a single emoji, e.g. !avatar 🐸")
+                        await self.send_chat(ws, channel_id, f"@{author} please use a single emoji, e.g. !emoji 🐸")
             else:
                 self.db.update_viewer(channel_id, author, is_subscriber=is_sub)
 

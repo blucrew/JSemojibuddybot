@@ -48,10 +48,10 @@
         .emoji-char { font-size: 8em; line-height: 1; }
         .name-tag { font-size: 1.5em; } /* Bumped name size slightly too so it's readable */
         
-        /* Heart animation for !pet */
+        /* Heart animation for !boop */
         .heart-pop {
             position: absolute;
-            font-size: 5em; /* Bigger hearts for bigger pets */
+            font-size: 5em;
             animation: popUp 1s ease-out forwards;
             pointer-events: none;
             z-index: 1000;
@@ -60,6 +60,15 @@
             0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
             50% { transform: translate(-50%, -150%) scale(1.5); opacity: 1; }
             100% { transform: translate(-50%, -300%) scale(1); opacity: 0; }
+        }
+        /* Scattered hearts for !pet */
+        .heart-scatter {
+            position: absolute;
+            font-size: 1.5em;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 1;
+            transition: transform 1.4s ease-out, opacity 1.4s ease-out;
         }
     </style>
 </head>
@@ -75,6 +84,14 @@
         let viewers = {};
         let lastEventTime = 0;
         let config = {};
+
+        // Physics mode
+        let physicsMode = 'chaos';
+        let leaderX = 0;
+        let marchY = 10;
+        let marchDir = 1;
+        const MARCH_SPEED = 1.5;
+        const MARCH_SPACING = 190;
 
         // Canvas/Physics state
         const container = document.getElementById('container');
@@ -101,8 +118,63 @@
             setTimeout(fetchData, 2000); 
         }
 
+        function switchMode(newMode) {
+            if (newMode === physicsMode) return;
+            physicsMode = newMode;
+            if (newMode === 'march') {
+                leaderX = 0; marchY = 10; marchDir = 1;
+                for (let name in viewers) {
+                    viewers[name].element.style.transition = 'transform 0.6s ease-in-out';
+                }
+                setTimeout(() => { for (let name in viewers) viewers[name].element.style.transition = ''; }, 700);
+            } else {
+                for (let name in viewers) {
+                    const v = viewers[name];
+                    v.vx = (Math.random() - 0.5) * 4;
+                    v.vy = (Math.random() - 0.5) * 4;
+                    v.element.style.transition = '';
+                }
+            }
+        }
+
+        function getMarchOrder() {
+            const streamerName = (config.streamer_username || '').toLowerCase();
+            return Object.keys(viewers).sort((a, b) => {
+                if (a.toLowerCase() === streamerName) return -1;
+                if (b.toLowerCase() === streamerName) return 1;
+                return 0;
+            });
+        }
+
+        function marchUpdate() {
+            const order = getMarchOrder();
+            if (order.length === 0) return;
+            const firstEl = viewers[order[0]]?.element;
+            const buddyW = firstEl ? firstEl.offsetWidth : 80;
+            const buddyH = firstEl ? firstEl.offsetHeight : 160;
+            const rowH = buddyH + 15;
+
+            leaderX += MARCH_SPEED * marchDir;
+            if (marchDir === 1 && leaderX + buddyW >= cWidth) {
+                marchDir = -1; leaderX = cWidth - buddyW;
+                marchY += rowH; if (marchY + buddyH > cHeight) marchY = 10;
+            } else if (marchDir === -1 && leaderX <= 0) {
+                marchDir = 1; leaderX = 0;
+                marchY += rowH; if (marchY + buddyH > cHeight) marchY = 10;
+            }
+
+            order.forEach((name, i) => {
+                const v = viewers[name];
+                if (!v || v.locked) return;
+                const x = leaderX + i * (-marchDir) * MARCH_SPACING;
+                v.x = x; v.y = marchY;
+                v.element.style.transform = `translate(${x}px, ${marchY}px)`;
+            });
+        }
+
         function applyConfig(cfg) {
             config = cfg;
+            if (cfg.physics_mode) switchMode(cfg.physics_mode);
             
             // 1. Color Parsing
             let r=0, g=0, b=0;
@@ -177,38 +249,129 @@
             events.forEach(e => {
                 if (e.timestamp > lastEventTime) {
                     lastEventTime = e.timestamp;
-                    if (e.type === 'pet') {
-                        triggerPet(JSON.parse(e.data));
-                    }
+                    if (e.type === 'boop') triggerInteract(JSON.parse(e.data));
+                    else if (e.type === 'pet') triggerPet(JSON.parse(e.data));
+                    else if (e.type === 'mode_change') switchMode(JSON.parse(e.data).mode);
                 }
             });
         }
 
         function triggerPet(data) {
-            const targetName = data.target;
-            const v = viewers[targetName];
-            if (v) {
+            const tv = viewers[data.target];
+            if (!tv) return;
+            tv.locked = true;
+            const el = tv.element;
+            const origX = tv.x, origY = tv.y;
+
+            const cx = cWidth / 2 - el.offsetWidth / 2;
+            const cy = cHeight / 2 - el.offsetHeight / 2;
+            const targetScale = Math.min(cWidth * 0.65 / el.offsetWidth, cHeight * 0.65 / el.offsetHeight);
+
+            // Slide to center
+            el.style.transition = 'transform 0.5s ease-in-out';
+            el.style.transform = `translate(${cx}px, ${cy}px)`;
+            tv.x = cx; tv.y = cy;
+
+            setTimeout(() => {
+                // Scale up
+                el.style.transition = 'transform 0.4s ease-out';
+                el.style.transform = `translate(${cx}px, ${cy}px) scale(${targetScale})`;
+                const audio = document.getElementById('squeak');
+                if (audio) { audio.volume = 0.9; audio.play().catch(() => {}); }
+
+                // Scatter hearts from visual center of play area
+                const hearts = ['❤️','🧡','💛','💚','💙','💜','💕','💖','💗','💘','💝'];
+                for (let i = 0; i < 14; i++) {
+                    const h = document.createElement('div');
+                    h.className = 'heart-scatter';
+                    h.innerText = hearts[Math.floor(Math.random() * hearts.length)];
+                    h.style.left = (cWidth / 2) + 'px';
+                    h.style.top = (cHeight / 2) + 'px';
+                    playArea.appendChild(h);
+                    const angle = (i / 14) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+                    const dist = 120 + Math.random() * 180;
+                    requestAnimationFrame(() => requestAnimationFrame(() => {
+                        h.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`;
+                        h.style.opacity = '0';
+                    }));
+                    setTimeout(() => h.remove(), 1800);
+                }
+
+                // Hold 3s, shrink, return
+                setTimeout(() => {
+                    el.style.transition = 'transform 0.4s ease-in';
+                    el.style.transform = `translate(${cx}px, ${cy}px) scale(1)`;
+                    setTimeout(() => {
+                        el.style.transition = 'transform 0.5s ease-in-out';
+                        el.style.transform = `translate(${origX}px, ${origY}px)`;
+                        tv.x = origX; tv.y = origY;
+                        setTimeout(() => { el.style.transition = ''; tv.locked = false; }, 500);
+                    }, 400);
+                }, 3000);
+            }, 500);
+        }
+
+        function triggerInteract(data) {
+            const sv = viewers[data.source];
+            const tv = viewers[data.target];
+            if (!sv || !tv) return;
+
+            sv.locked = true;
+            tv.locked = true;
+
+            const origSx = sv.x, origSy = sv.y;
+            const origTx = tv.x, origTy = tv.y;
+            const mx = (origSx + origTx) / 2;
+            const my = (origSy + origTy) / 2;
+
+            sv.element.style.transition = 'transform 0.4s ease-in-out';
+            tv.element.style.transition = 'transform 0.4s ease-in-out';
+            sv.element.style.transform = `translate(${mx}px, ${my}px)`;
+            tv.element.style.transform = `translate(${mx}px, ${my}px)`;
+            sv.x = mx; sv.y = my;
+            tv.x = mx; tv.y = my;
+
+            setTimeout(() => {
+                const hearts = ['❤️','🧡','💛','💚','💙','💜','💕','💖','💗','💘','💝'];
                 const heart = document.createElement('div');
                 heart.className = 'heart-pop';
-                heart.innerText = '❤️';
-                heart.style.left = (v.x + 20) + 'px';
-                heart.style.top = (v.y - 20) + 'px';
+                heart.innerText = hearts[Math.floor(Math.random() * hearts.length)];
+                heart.style.left = mx + 'px';
+                heart.style.top = my + 'px';
                 playArea.appendChild(heart);
                 const audio = document.getElementById('squeak');
-                if(audio) { audio.volume = 0.5; audio.play().catch(err => {}); }
+                if (audio) { audio.volume = 0.5; audio.play().catch(() => {}); }
                 setTimeout(() => heart.remove(), 1000);
-            }
+
+                setTimeout(() => {
+                    sv.element.style.transform = `translate(${origSx}px, ${origSy}px)`;
+                    tv.element.style.transform = `translate(${origTx}px, ${origTy}px)`;
+                    sv.x = origSx; sv.y = origSy;
+                    tv.x = origTx; tv.y = origTy;
+                    setTimeout(() => {
+                        sv.element.style.transition = '';
+                        tv.element.style.transition = '';
+                        sv.locked = false;
+                        tv.locked = false;
+                    }, 400);
+                }, 600);
+            }, 400);
         }
 
         function loop() {
             if (cWidth < 10 || cHeight < 10) return requestAnimationFrame(loop);
-            for (let name in viewers) {
-                const v = viewers[name];
-                const el = v.element;
-                v.x += v.vx; v.y += v.vy;
-                if (v.x <= 0 || v.x + el.offsetWidth >= cWidth) { v.vx *= -1; v.x = Math.max(0, Math.min(v.x, cWidth - el.offsetWidth)); }
-                if (v.y <= 0 || v.y + el.offsetHeight >= cHeight) { v.vy *= -1; v.y = Math.max(0, Math.min(v.y, cHeight - el.offsetHeight)); }
-                el.style.transform = `translate(${v.x}px, ${v.y}px)`;
+            if (physicsMode === 'march') {
+                marchUpdate();
+            } else {
+                for (let name in viewers) {
+                    const v = viewers[name];
+                    if (v.locked) continue;
+                    const el = v.element;
+                    v.x += v.vx; v.y += v.vy;
+                    if (v.x <= 0 || v.x + el.offsetWidth >= cWidth) { v.vx *= -1; v.x = Math.max(0, Math.min(v.x, cWidth - el.offsetWidth)); }
+                    if (v.y <= 0 || v.y + el.offsetHeight >= cHeight) { v.vy *= -1; v.y = Math.max(0, Math.min(v.y, cHeight - el.offsetHeight)); }
+                    el.style.transform = `translate(${v.x}px, ${v.y}px)`;
+                }
             }
             requestAnimationFrame(loop);
         }
