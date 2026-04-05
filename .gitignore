@@ -21,3 +21,7 @@ bot-env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Old files backup
+old_files_backup.zip
+.claude/

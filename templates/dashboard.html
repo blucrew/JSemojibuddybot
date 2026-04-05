@@ -143,6 +143,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18p
 .tag { font-size: 0.7em; padding: 2px 5px; border-radius: 4px; font-weight:bold; }
 .tag-pub { background: #00b894; color:white; }
 .tag-sub { background: #6c5ce7; color:white; }
+.tag-streamer { background: #e17055; color:white; }
 .copy-btn { width: 100%; padding: 12px; background: #00b894; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
 .copy-btn:hover { background: #00a884; }
 .url-reveal { font-family: monospace; font-size: 0.85em; background: #eee; padding: 8px; border-radius: 6px; margin-top: 5px; word-break: break-all; color: #555; text-align: center; }
@@ -333,7 +334,7 @@ function copySource() {
 }
 
 function copyChatCmd() {
-    const text = "Use !pet @user or !boop @user to interact! Subs can also use !emoji 👽 (any standard emoji) to change their buddy, and !namecolor pink (or !namecolor #ff6600) to change their name color.";
+    const text = "Use !boop @user to interact! Subs can also use !emoji 👽 (any standard emoji) to change their buddy, and !namecolor pink (or !namecolor #ff6600) to change their name color. (!pet @user is streamer-only.)";
     navigator.clipboard.writeText(text).then(() => {
         alert("Instructions copied to clipboard!");
     });
@@ -629,9 +630,9 @@ function startStreamMapAnimation() {
             <div class="inst-body">
                 <div class="cmd-box">
                     <span>!pet @user</span>
-                    <span class="tag tag-pub">EVERYONE</span>
+                    <span class="tag tag-streamer">STREAMER</span>
                 </div>
-                <div>Triggers a heart animation & sound effect.</div>
+                <div>Streamer-only. Highlights a viewer in the center of the overlay with a heart animation &amp; sound effect — use it to spotlight someone briefly.</div>
                 
                 <div class="cmd-box" style="margin-top:15px;">
                     <span>!boop @user</span>
@@ -661,7 +662,7 @@ function startStreamMapAnimation() {
             <div class="inst-body">
                 <p>Paste this into your chat to teach viewers how to play:</p>
                 <div class="chat-copy-box" onclick="copyChatCmd()" style="background:#eee; padding:10px; border-radius:5px; font-size:0.8em; cursor:pointer;">
-                    Use !pet @user or !boop @user to interact! Subs can also use !emoji 👽 (any standard emoji) to change their buddy, and !namecolor pink (or !namecolor #ff6600) to change their name color.
+                    Use !boop @user to interact! Subs can also use !emoji 👽 (any standard emoji) to change their buddy, and !namecolor pink (or !namecolor #ff6600) to change their name color. (!pet @user is streamer-only.)
                 </div>
             </div>
         </div>

@@ -131,7 +131,7 @@ class BotManager:
 
             # COMMANDS
             if content.lower().startswith("!emojihelp"):
-                await self.send_chat(ws, channel_id, "✨ Commands: !boop @user | !pet @user | !emoji 🎭 (subs) | !namecolor pink (subs) | !emojimarch / !emojichaos (streamer)")
+                await self.send_chat(ws, channel_id, "✨ Commands: !boop @user | !pet @user (streamer) | !emoji 🎭 (subs) | !namecolor pink (subs) | !emojimarch / !emojichaos (streamer)")
 
             elif content.lower().startswith("!boop"):
                 parts = content.split(" ")
