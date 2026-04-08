@@ -202,6 +202,8 @@ async def handle_dashboard(request):
         if 'streamer_own_emoji' not in s: s['streamer_own_emoji'] = '👑'
         if 'border_color' not in s: s['border_color'] = '#ffffff'
         if 'streamer_username' not in s: s['streamer_username'] = ''
+        s['overlay_width'] = s.get('overlay_width') or ''
+        s['overlay_height'] = s.get('overlay_height') or ''
         
         font = s.get('font_family', 'Nunito')
         for f in ['Nunito', 'Arial', 'Courier', 'Impact', 'Orbitron', 'Permanent Marker', 'Inter']:
@@ -330,7 +332,8 @@ async def handle_save(request):
         'streamer_own_emoji', 'subscriber_emoji', 'default_emoji',
         'bg_color', 'header_color', 'show_title',
         'text_color', 'border_color', 'show_border',
-        'box_opacity', 'box_border_radius', 'layout_mode', 'physics_mode'
+        'box_opacity', 'box_border_radius', 'layout_mode', 'physics_mode',
+        'overlay_width', 'overlay_height'
     ]
 
     config_data['show_title'] = 1 if 'show_title' in data else 0

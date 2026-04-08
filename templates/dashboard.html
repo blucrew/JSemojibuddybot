@@ -316,12 +316,20 @@ function updateDummyPhysics() {
 
 function selectLayout(mode) {
     document.querySelectorAll('input[name="layout_mode"]').forEach(el => el.checked = (el.value === mode));
+    const wEl = document.getElementById('overlay_width');
+    const hEl = document.getElementById('overlay_height');
+    if (mode === 'standard') { wEl.value = 960; hEl.value = 540; }
+    else if (mode === 'tall') { wEl.value = 450; hEl.value = 900; }
+    else if (mode === 'wide') { wEl.value = 1920; hEl.value = 250; }
     updatePreviewStyles();
-    
-    const recBox = document.getElementById('rec-size');
-    if (mode === 'standard') recBox.innerText = "Recommended: 960 x 540 px";
-    else if (mode === 'tall') recBox.innerText = "Recommended: 450 x 900 px (Side Bar)";
-    else if (mode === 'wide') recBox.innerText = "Recommended: 1920 x 250 px (Bottom Bar)";
+}
+
+function applyDimensionPreset(val) {
+    if (!val) return;
+    const [w, h] = val.split('x').map(Number);
+    document.getElementById('overlay_width').value = w;
+    document.getElementById('overlay_height').value = h;
+    updatePreviewStyles();
 }
 
 function copySource() {
@@ -378,26 +386,26 @@ function updatePreviewStyles() {
     });
 
     // SCALE PREVIEW TO FIT
-    let w = 960, h = 540, scale = 0.6; 
-    
-    if(layout === 'tall') { 
-        w = 450; h = 900; scale = 0.6; 
-    } else if (layout === 'wide') { 
-        w = 1920; h = 250; scale = 0.45; 
-    } else { 
-        w = 960; h = 540; scale = 0.6; 
+    const wVal = parseInt(document.getElementById('overlay_width').value) || 0;
+    const hVal = parseInt(document.getElementById('overlay_height').value) || 0;
+    let w, h;
+    if (wVal > 0 && hVal > 0) {
+        w = wVal; h = hVal;
+    } else if (layout === 'tall') {
+        w = 450; h = 900;
+    } else if (layout === 'wide') {
+        w = 1920; h = 250;
+    } else {
+        w = 960; h = 540;
     }
+    const scale = Math.min(660 / w, 520 / h, 0.7);
 
     realBox.style.width = `${w}px`;
     realBox.style.height = `${h}px`;
     realBox.style.transform = `scale(${scale})`;
-    
+
     document.getElementById('placement-box').style.borderRadius = `${rad}px`;
-    
-    const recBox = document.getElementById('rec-size');
-    if (layout === 'standard') recBox.innerText = "Recommended: 960 x 540 px";
-    else if (layout === 'tall') recBox.innerText = "Recommended: 450 x 900 px (Side Bar)";
-    else if (layout === 'wide') recBox.innerText = "Recommended: 1920 x 250 px (Bottom Bar)";
+    document.getElementById('rec-size').innerText = `Set OBS browser source to: ${w} × ${h} px`;
 }
 
 let mapStep = 0;
@@ -471,6 +479,31 @@ function startStreamMapAnimation() {
                 <label class="layout-option">
                     <input type="radio" name="physics_mode" value="march" {chk_march} onclick="this.form.physics_mode.value='march'">🪖 March
                 </label>
+            </div>
+
+            <label style="margin-top:12px;">Overlay Dimensions</label>
+            <div class="config-group">
+                <div class="config-group-title">Pixel Size</div>
+                <select onchange="applyDimensionPreset(this.value)" style="margin-bottom:10px; width:100%;">
+                    <option value="">— Preset —</option>
+                    <option value="960x540">Standard (960×540)</option>
+                    <option value="450x900">Tall Sidebar (450×900)</option>
+                    <option value="1920x250">Wide Bar (1920×250)</option>
+                    <option value="1280x720">HD (1280×720)</option>
+                    <option value="1920x1080">Full HD (1920×1080)</option>
+                    <option value="800x600">Classic (800×600)</option>
+                </select>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Width (px)</label>
+                        <input type="number" id="overlay_width" name="overlay_width" value="{overlay_width}" min="200" max="3840" placeholder="960" oninput="updatePreviewStyles()">
+                    </div>
+                    <div class="input-group">
+                        <label>Height (px)</label>
+                        <input type="number" id="overlay_height" name="overlay_height" value="{overlay_height}" min="100" max="2160" placeholder="540" oninput="updatePreviewStyles()">
+                    </div>
+                </div>
+                <div class="help-text">Match your OBS browser source to these dimensions for pixel-perfect placement. Selecting a Shape above auto-fills a suggestion.</div>
             </div>
 
             <div class="stream-map-wrapper">

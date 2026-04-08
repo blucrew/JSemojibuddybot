@@ -208,7 +208,16 @@
                 container.style.border = 'none';
             }
 
-            // 3. Header
+            // 3. Fixed dimensions
+            if (cfg.overlay_width && cfg.overlay_height) {
+                container.style.width = cfg.overlay_width + 'px';
+                container.style.height = cfg.overlay_height + 'px';
+            } else {
+                container.style.width = '100%';
+                container.style.height = '100%';
+            }
+
+            // 4. Header
             const header = document.getElementById('header');
             header.style.display = cfg.show_title ? 'block' : 'none';
             header.innerText = cfg.collection_name;
