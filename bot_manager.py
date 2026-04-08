@@ -83,14 +83,7 @@ class BotManager:
                 subprotocols=["actioncable-v1-json", "actioncable-unsupported"]
             ) as ws:
                 
-                # Global subscription (for receiving events from all channels)
-                subscribe_cmd = {
-                    "command": "subscribe",
-                    "identifier": json.dumps({"channel": "GatewayChannel"})
-                }
-                await ws.send(json.dumps(subscribe_cmd))
-
-                # Per-channel subscriptions (required for send_chat to work)
+                # Per-channel subscriptions — handles both receiving events AND sending
                 streamers = self.db.get_all_streamers()
                 for s in streamers:
                     cid = str(s['channel_id'])
@@ -98,7 +91,7 @@ class BotManager:
                         "command": "subscribe",
                         "identifier": json.dumps({"channel": "GatewayChannel", "id": cid})
                     }))
-                    print(f"📡 Subscribed to channel {cid} for sending")
+                    print(f"📡 Subscribed to channel {cid}")
 
                 print("✅ Connected! Waiting for events...")
 
@@ -186,6 +179,7 @@ class BotManager:
                     self.db.log_event(channel_id, "mode_change", json.dumps({"mode": "chaos"}))
 
             elif content.lower().startswith("!namecolor") and not is_sub and author.lower() not in PRIVILEGED_USERS:
+                print(f"🚫 [{channel_id}] {author} tried !namecolor but is_sub={is_sub}")
                 await self.send_chat(ws, channel_id, f"@{author} !namecolor is for subscribers only. 🎨")
 
             elif content.lower().startswith("!namecolor") and (is_sub or author.lower() in PRIVILEGED_USERS):
@@ -200,6 +194,7 @@ class BotManager:
                         await self.send_chat(ws, channel_id, f"@{author} try a color name like !namecolor pink or a hex code like !namecolor #ff6600")
 
             elif content.lower().startswith("!emoji") and not is_sub and author.lower() not in PRIVILEGED_USERS:
+                print(f"🚫 [{channel_id}] {author} tried !emoji but is_sub={is_sub}")
                 await self.send_chat(ws, channel_id, f"@{author} !emoji is for subscribers only. 🎭")
 
             elif content.lower().startswith("!emoji") and (is_sub or author.lower() in PRIVILEGED_USERS):
