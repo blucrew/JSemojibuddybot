@@ -102,9 +102,11 @@ class BotManager:
                     data = json.loads(msg)
                     if data.get("type") in ["ping", "confirm_subscription"]: continue
 
-                    # Deduplicate: gateway sends each event once per subscription
+                    # Deduplicate: gateway sends each event once per subscription,
+                    # each wrapped in a different identifier — hash the inner message only
                     now = time.time()
-                    h = hashlib.md5(msg.encode()).hexdigest()
+                    inner = json.dumps(data.get("message", {}), sort_keys=True)
+                    h = hashlib.md5(inner.encode()).hexdigest()
                     seen = {k: v for k, v in seen.items() if now - v < 5}
                     if h in seen:
                         continue
