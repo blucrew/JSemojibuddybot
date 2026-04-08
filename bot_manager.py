@@ -142,7 +142,8 @@ class BotManager:
             content = message.get("text", "")
             author_data = message.get("author", {})
             author = author_data.get("username", "Unknown")
-            is_sub = author_data.get("isSubscriber", False) # Fixed parsing
+            is_sub = author_data.get("isSubscriber", False)
+            is_mod = author_data.get("isModerator", False)
             
             print(f"📩 [{channel_id}] {author}: {content}")
             
@@ -191,11 +192,11 @@ class BotManager:
                     self.db.update_config(channel_id, {"physics_mode": "chaos"})
                     self.db.log_event(channel_id, "mode_change", json.dumps({"mode": "chaos"}))
 
-            elif content.lower().startswith("!namecolor") and not is_sub and author.lower() not in PRIVILEGED_USERS:
+            elif content.lower().startswith("!namecolor") and not is_sub and not is_mod and author.lower() not in PRIVILEGED_USERS:
                 print(f"🚫 [{channel_id}] {author} tried !namecolor but is_sub={is_sub}")
                 await self.send_chat(ws, channel_id, f"@{author} !namecolor is for subscribers only. 🎨")
 
-            elif content.lower().startswith("!namecolor") and (is_sub or author.lower() in PRIVILEGED_USERS):
+            elif content.lower().startswith("!namecolor") and (is_sub or is_mod or author.lower() in PRIVILEGED_USERS):
                 parts = content.split()
                 if len(parts) > 1:
                     color = parts[1]
@@ -206,11 +207,11 @@ class BotManager:
                     else:
                         await self.send_chat(ws, channel_id, f"@{author} try a color name like !namecolor pink or a hex code like !namecolor #ff6600")
 
-            elif content.lower().startswith("!emoji") and not is_sub and author.lower() not in PRIVILEGED_USERS:
+            elif content.lower().startswith("!emoji") and not is_sub and not is_mod and author.lower() not in PRIVILEGED_USERS:
                 print(f"🚫 [{channel_id}] {author} tried !emoji but is_sub={is_sub}")
                 await self.send_chat(ws, channel_id, f"@{author} !emoji is for subscribers only. 🎭")
 
-            elif content.lower().startswith("!emoji") and (is_sub or author.lower() in PRIVILEGED_USERS):
+            elif content.lower().startswith("!emoji") and (is_sub or is_mod or author.lower() in PRIVILEGED_USERS):
                 parts = content.split()
                 if len(parts) > 1:
                     avatar = parts[1]
