@@ -149,9 +149,6 @@ class BotManager:
             self.db.add_active_viewer(channel_id, author)
 
             # COMMANDS
-            if content.lower().startswith("!emoji") or content.lower().startswith("!namecolor"):
-                print(f"🔍 [{channel_id}] author_data for {author}: is_sub={is_sub} keys={list(author_data.keys())}")
-
             if content.lower().startswith("!emojihelp"):
                 await self.send_chat(ws, channel_id, "✨ Commands: !boop @user | !pet @user (streamer) | !emoji 🎭 (subs) | !namecolor pink (subs) | !emojimarch / !emojichaos (streamer)")
 
