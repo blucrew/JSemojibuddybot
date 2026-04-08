@@ -3,6 +3,7 @@
 <head>
     <title>Emoji Buddy Overlay</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&family=Orbitron:wght@400;900&family=Permanent+Marker&family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@jdecked/twemoji@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
     <style>
         body { margin: 0; padding: 0; overflow: hidden; background: transparent; }
         
@@ -46,6 +47,7 @@
         
         .emoji-char { font-size: 4em; line-height: 1; }
         .name-tag { font-size: 1em; }
+        img.emoji { height: 1em; width: 1em; margin: 0; padding: 0; display: inline; vertical-align: -0.1em; pointer-events: none; }
         
         /* Heart animation for !boop */
         .heart-pop {
@@ -255,6 +257,7 @@
             }
             let color = data.color || config.text_color;
             vObj.element.innerHTML = `<span class="emoji-char">${emoji || '🙂'}</span><span class="name-tag" style="color:${color}">${data.username}</span>`;
+            twemoji.parse(vObj.element, { folder: 'svg', ext: '.svg', base: 'https://cdn.jsdelivr.net/npm/@jdecked/twemoji@latest/assets/' });
         }
 
         function handleEvents(events) {
@@ -300,6 +303,7 @@
                     h.style.left = (cWidth / 2) + 'px';
                     h.style.top = (cHeight / 2) + 'px';
                     playArea.appendChild(h);
+                    twemoji.parse(h, { folder: 'svg', ext: '.svg', base: 'https://cdn.jsdelivr.net/npm/@jdecked/twemoji@latest/assets/' });
                     const angle = (i / 14) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
                     const dist = 120 + Math.random() * 180;
                     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -351,6 +355,7 @@
                 heart.style.left = mx + 'px';
                 heart.style.top = my + 'px';
                 playArea.appendChild(heart);
+                twemoji.parse(heart, { folder: 'svg', ext: '.svg', base: 'https://cdn.jsdelivr.net/npm/@jdecked/twemoji@latest/assets/' });
                 const audio = document.getElementById('squeak');
                 if (audio) { audio.volume = 0.5; audio.play().catch(() => {}); }
                 setTimeout(() => heart.remove(), 1000);
