@@ -14,6 +14,9 @@ load_dotenv()
 BOT_ID = os.getenv("JOYSTICK_BOT_ID")
 BOT_SECRET = os.getenv("JOYSTICK_BOT_SECRET")
 
+# Users who can use all commands regardless of subscription status
+PRIVILEGED_USERS = {"silasblu", "rustyblu"}
+
 class BotManager:
     def __init__(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -80,13 +83,23 @@ class BotManager:
                 subprotocols=["actioncable-v1-json", "actioncable-unsupported"]
             ) as ws:
                 
-                # Subscribe
+                # Global subscription (for receiving events from all channels)
                 subscribe_cmd = {
                     "command": "subscribe",
                     "identifier": json.dumps({"channel": "GatewayChannel"})
                 }
                 await ws.send(json.dumps(subscribe_cmd))
-                
+
+                # Per-channel subscriptions (required for send_chat to work)
+                streamers = self.db.get_all_streamers()
+                for s in streamers:
+                    cid = str(s['channel_id'])
+                    await ws.send(json.dumps({
+                        "command": "subscribe",
+                        "identifier": json.dumps({"channel": "GatewayChannel", "id": cid})
+                    }))
+                    print(f"📡 Subscribed to channel {cid} for sending")
+
                 print("✅ Connected! Waiting for events...")
 
                 async for msg in ws:
@@ -134,7 +147,7 @@ class BotManager:
                 await self.send_chat(ws, channel_id, "✨ Commands: !boop @user | !pet @user (streamer) | !emoji 🎭 (subs) | !namecolor pink (subs) | !emojimarch / !emojichaos (streamer)")
 
             elif content.lower().startswith("!boop"):
-                parts = content.split(" ")
+                parts = content.split()
                 if len(parts) > 1:
                     target = parts[1].replace("@", "")
                     streamer = self.db.get_streamer(channel_id)
@@ -145,7 +158,7 @@ class BotManager:
                     self.db.log_event(channel_id, "boop", json.dumps({"source": author, "target": target}))
 
             elif content.lower().startswith("!pet"):
-                parts = content.split(" ")
+                parts = content.split()
                 if len(parts) > 1:
                     target = parts[1].replace("@", "")
                     streamer = self.db.get_streamer(channel_id)
@@ -172,11 +185,11 @@ class BotManager:
                     self.db.update_config(channel_id, {"physics_mode": "chaos"})
                     self.db.log_event(channel_id, "mode_change", json.dumps({"mode": "chaos"}))
 
-            elif content.lower().startswith("!namecolor") and not is_sub:
+            elif content.lower().startswith("!namecolor") and not is_sub and author.lower() not in PRIVILEGED_USERS:
                 await self.send_chat(ws, channel_id, f"@{author} !namecolor is for subscribers only. 🎨")
 
-            elif content.lower().startswith("!namecolor") and is_sub:
-                parts = content.split(" ")
+            elif content.lower().startswith("!namecolor") and (is_sub or author.lower() in PRIVILEGED_USERS):
+                parts = content.split()
                 if len(parts) > 1:
                     color = parts[1]
                     if re.fullmatch(r"[a-zA-Z]+", color) or re.fullmatch(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})", color):
@@ -186,14 +199,14 @@ class BotManager:
                     else:
                         await self.send_chat(ws, channel_id, f"@{author} try a color name like !namecolor pink or a hex code like !namecolor #ff6600")
 
-            elif content.lower().startswith("!emoji") and not is_sub:
+            elif content.lower().startswith("!emoji") and not is_sub and author.lower() not in PRIVILEGED_USERS:
                 await self.send_chat(ws, channel_id, f"@{author} !emoji is for subscribers only. 🎭")
 
-            elif content.lower().startswith("!emoji") and is_sub:
-                parts = content.split(" ")
+            elif content.lower().startswith("!emoji") and (is_sub or author.lower() in PRIVILEGED_USERS):
+                parts = content.split()
                 if len(parts) > 1:
                     avatar = parts[1]
-                    if emoji.is_emoji(avatar):
+                    if emoji.emoji_count(avatar) >= 1:
                         print(f"🎭 EMOJI DETECTED! {author} -> {avatar}")
                         self.db.update_viewer(channel_id, author, emoji=avatar)
                         await self.send_chat(ws, channel_id, f"@{author} your buddy has been updated! {avatar}")

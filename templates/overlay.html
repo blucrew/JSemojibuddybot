@@ -44,9 +44,8 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
         
-        /* Default fallback size increased to 9em */
-        .emoji-char { font-size: 8em; line-height: 1; }
-        .name-tag { font-size: 1.5em; } /* Bumped name size slightly too so it's readable */
+        .emoji-char { font-size: 4em; line-height: 1; }
+        .name-tag { font-size: 1em; }
         
         /* Heart animation for !boop */
         .heart-pop {
@@ -87,11 +86,10 @@
 
         // Physics mode
         let physicsMode = 'chaos';
-        let leaderX = 0;
-        let marchY = 10;
+        let marchX = 0;
+        let marchY = 0;
         let marchDir = 1;
         const MARCH_SPEED = 1.5;
-        const MARCH_SPACING = 190;
 
         // Canvas/Physics state
         const container = document.getElementById('container');
@@ -122,7 +120,7 @@
             if (newMode === physicsMode) return;
             physicsMode = newMode;
             if (newMode === 'march') {
-                leaderX = 0; marchY = 10; marchDir = 1;
+                marchX = 0; marchY = 0; marchDir = 1;
                 for (let name in viewers) {
                     viewers[name].element.style.transition = 'transform 0.6s ease-in-out';
                 }
@@ -149,26 +147,40 @@
         function marchUpdate() {
             const order = getMarchOrder();
             if (order.length === 0) return;
-            const firstEl = viewers[order[0]]?.element;
-            const buddyW = firstEl ? firstEl.offsetWidth : 80;
-            const buddyH = firstEl ? firstEl.offsetHeight : 160;
-            const rowH = buddyH + 15;
 
-            leaderX += MARCH_SPEED * marchDir;
-            if (marchDir === 1 && leaderX + buddyW >= cWidth) {
-                marchDir = -1; leaderX = cWidth - buddyW;
-                marchY += rowH; if (marchY + buddyH > cHeight) marchY = 10;
-            } else if (marchDir === -1 && leaderX <= 0) {
-                marchDir = 1; leaderX = 0;
-                marchY += rowH; if (marchY + buddyH > cHeight) marchY = 10;
+            const firstEl = viewers[order[0]]?.element;
+            const eW = firstEl ? firstEl.offsetWidth : 64;
+            const eH = firstEl ? firstEl.offsetHeight : 90;
+            const gap = 8;
+            const cellW = eW + gap;
+            const cellH = eH + gap;
+            const cols = Math.max(1, Math.floor(cWidth / cellW));
+            const usedCols = Math.min(order.length, cols);
+            const groupW = usedCols * cellW - gap; // actual pixel width of the grid
+            const totalRows = Math.ceil(order.length / cols);
+
+            marchX += MARCH_SPEED * marchDir;
+
+            if (marchDir === 1 && marchX + groupW >= cWidth) {
+                marchDir = -1;
+                marchX = cWidth - groupW;
+                marchY += cellH;
+                if (marchY + totalRows * cellH > cHeight) marchY = 0;
+            } else if (marchDir === -1 && marchX <= 0) {
+                marchDir = 1;
+                marchX = 0;
+                marchY += cellH;
+                if (marchY + totalRows * cellH > cHeight) marchY = 0;
             }
 
             order.forEach((name, i) => {
                 const v = viewers[name];
                 if (!v || v.locked) return;
-                const x = leaderX + i * (-marchDir) * MARCH_SPACING;
-                v.x = x; v.y = marchY;
-                v.element.style.transform = `translate(${x}px, ${marchY}px)`;
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                v.x = marchX + col * cellW;
+                v.y = marchY + row * cellH;
+                v.element.style.transform = `translate(${v.x}px, ${v.y}px)`;
             });
         }
 
