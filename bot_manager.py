@@ -5,6 +5,8 @@ import ssl
 import websockets
 import os
 import base64
+import time
+import hashlib
 import emoji
 from dotenv import load_dotenv
 from db import DBManager
@@ -94,10 +96,19 @@ class BotManager:
                     print(f"📡 Subscribed to channel {cid}")
 
                 print("✅ Connected! Waiting for events...")
+                seen = {}  # hash -> timestamp, deduplicates events received per-subscription
 
                 async for msg in ws:
                     data = json.loads(msg)
                     if data.get("type") in ["ping", "confirm_subscription"]: continue
+
+                    # Deduplicate: gateway sends each event once per subscription
+                    now = time.time()
+                    h = hashlib.md5(msg.encode()).hexdigest()
+                    seen = {k: v for k, v in seen.items() if now - v < 5}
+                    if h in seen:
+                        continue
+                    seen[h] = now
 
                     # 1. Get the raw message payload
                     message = data.get("message", {})
