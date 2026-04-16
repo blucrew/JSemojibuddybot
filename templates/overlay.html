@@ -260,7 +260,8 @@
 
         function updateViewerStyle(vObj, data) {
             vObj.data = data;
-            let emoji = data.emoji; 
+            const isStreamer = data.username.toLowerCase() === (config.streamer_username || '').toLowerCase();
+            let emoji = isStreamer ? (config.streamer_own_emoji || data.emoji) : data.emoji;
             if (!emoji) {
                 emoji = data.is_subscriber ? config.subscriber_emoji : config.default_emoji;
             }
